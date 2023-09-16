@@ -17,25 +17,25 @@ import java.util.stream.Collectors;
 /**
  * Utility class to parse and analyze Java code using the JavaParser library.
  * <p>
- * This class provides methods for extracting method details, method bodies,
+ * This class provides methods for extracting method signature, method bodies,
  * class declarations, and Java code blocks from a given string or file.
  */
 public class JavaCodeParser {
 
     /**
-     * Represents the details of a Java method including its return type,
+     * Represents the signature of a Java method: its return type,
      * method name, and parameters.
      */
-    public record MethodDetails(String returnType, String methodName, String parameters) {
+    public record MethodSignature(String returnType, String methodName, String parameters) {
     }
 
     /**
-     * Extracts method details from a given method string.
+     * Extracts method signature from a given method string.
      *
      * @param method the method as a string
-     * @return an Optional containing {@link MethodDetails} if found, else empty
+     * @return an Optional containing {@link MethodSignature} if found, else empty
      */
-    public Optional<MethodDetails> extractMethodDetails(String method) {
+    public Optional<MethodSignature> extractMethodSignature(String method) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(method);
 
@@ -57,7 +57,7 @@ public class JavaCodeParser {
                         .map(p -> p.getType() + " " + p.getName())
                         .collect(Collectors.joining(", "));
 
-                return Optional.of(new MethodDetails(returnType, methodName, parameters));
+                return Optional.of(new MethodSignature(returnType, methodName, parameters));
             }
         } catch (Exception e) {
             e.printStackTrace();
