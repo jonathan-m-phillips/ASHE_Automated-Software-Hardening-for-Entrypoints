@@ -27,6 +27,7 @@ apply plugin: 'org.checkerframework'
 checkerFramework {
     checkers = [
             'org.checkerframework.checker.nullness.NullnessChecker',
+            'org.checkerframework.checker.optional.OptionalChecker',
             'org.checkerframework.checker.resourceleak.ResourceLeakChecker',
     ]
 }
