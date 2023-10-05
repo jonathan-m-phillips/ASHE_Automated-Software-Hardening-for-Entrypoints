@@ -75,6 +75,11 @@ public class OpenAIService implements ApiService {
         CompletableFuture<HttpResponse<String>> futureResponse =
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
+        // TODO: it might be better to make the magic numbers here (10 second logging, 60 second
+        // timeout) configurable options of the class: that is, store them in fields. I suspect
+        // that we might want to change the timeout at some point in the future, or try this with
+        // different timeouts.
+
         // Log "Waiting for the API response..." every 10 seconds while waiting for the response.
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.scheduleAtFixedRate(

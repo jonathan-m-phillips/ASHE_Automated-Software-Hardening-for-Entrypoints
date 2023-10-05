@@ -3,14 +3,17 @@ plugins {
     id "org.checkerframework" version "0.6.33"
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+group = 'edu.njit.jerse'
+version = '0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    // TODO: this project has other dependencies (e.g., the Checker Framework itself). Some of these
+    // dependencies are stored as .jar files in the lib/ directory. Instead, all the dependencies should
+    // be managed by the build system directly.
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.15.2'
@@ -33,3 +36,8 @@ checkerFramework {
             'org.checkerframework.checker.resourceleak.ResourceLeakChecker',
     ]
 }
+
+// TODO: we should add a code formatter that automatically enforces
+// some code style. I prefer spotless (https://github.com/diffplug/spotless),
+// personally, but the more important thing is to have some formatter so that
+// all our code has consistent style.

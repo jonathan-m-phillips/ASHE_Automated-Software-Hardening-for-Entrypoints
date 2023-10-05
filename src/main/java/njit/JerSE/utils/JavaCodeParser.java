@@ -24,6 +24,9 @@ import java.util.stream.Collectors;
  */
 public class JavaCodeParser {
 
+    // TODO: Why not make this Pattern static? That would enable you to 1) make this class non-instantiable,
+    // and 2) convert all of its methods to static functions, which I think makes more sense for a utility
+    // class.
     private final Pattern javaCodeBlockPattern;
     private static final Logger LOGGER = LogManager.getLogger(JavaCodeParser.class);
 
@@ -49,6 +52,9 @@ public class JavaCodeParser {
      * @param method the method as a string
      * @return an Optional containing {@link MethodSignature} if found, else empty
      */
+    // TODO: I prefer using null to indicate the lack of a value rather than Optional.
+    // For a discussion of why, see Mike's article, which does a better job of explaining
+    // why than I possibly could: https://homes.cs.washington.edu/~mernst/advice/nothing-is-better-than-optional.html
     public Optional<MethodSignature> extractMethodSignature(String method) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(method);
@@ -74,6 +80,9 @@ public class JavaCodeParser {
                 LOGGER.debug("Extracted method signature: ReturnType={} MethodName={} Parameters={}", returnType, methodName, parameters);
                 return Optional.of(new MethodSignature(returnType, methodName, parameters));
             }
+            // TODO: it's good practice to try to limit the scope of try-blocks as much as possible,
+            // and have different error messages/logging/catch blocks for different kinds of problems
+            // that might occur.
         } catch (Exception ex) {
             LOGGER.error("Failed to extract method signature: ", ex);
         }
@@ -136,6 +145,11 @@ public class JavaCodeParser {
      *
      * @param response the response string potentially containing a Java code block
      * @return the Java code block without enclosing tags, or empty string if not found
+     * TODO: I think returning the empty string here when the response can't be parsed could
+     * lead to errors later, because failing to find a Java code block in a response to an ASHE-prompt
+     * from GPT is an error-condition. So, I'd return null or (better) throw an exception if this
+     * method fails, so that callers are forced to deal with that situation (presumably by re-invoking
+     * the GPT API?).
      */
     public String extractJavaCodeBlockFromResponse(String response) {
         Matcher matcher = javaCodeBlockPattern.matcher(response);

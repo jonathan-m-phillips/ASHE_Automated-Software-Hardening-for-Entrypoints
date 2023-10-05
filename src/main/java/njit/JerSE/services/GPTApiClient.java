@@ -74,6 +74,8 @@ public class GPTApiClient {
         GPTMessage userMessage = new GPTMessage(GPT_USER, prompt);
         GPTMessage[] messages = new GPTMessage[]{systemMessage, userMessage};
 
+        // TODO: this debug message is misleading, since it's printed before
+        // the object is actually created.
         LOGGER.debug("GPT request object created successfully.");
         return new GPTRequest(GPTModel.GPT_4, messages);
     }
@@ -125,6 +127,8 @@ public class GPTApiClient {
      * @throws IOException if processing the response body fails
      */
     private String handleApiResponse(HttpResponse<String> httpResponse) throws IOException {
+        // TODO: why not reuse the ObjectMapper that this class stores in a field? My impression is
+        // that ObjectMapper should be reusable.
         ObjectMapper objectMapper = new ObjectMapper();
 
         if (httpResponse.statusCode() == 200) {

@@ -7,28 +7,36 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 
 /**
- * Provides functionality for compiling Java classes using the Checker Framework.
+ * Provides static methods for compiling Java classes using the Checker Framework.
  * <p>
  * The Checker Framework enhances Java's type system to make it more powerful and expressive,
  * allowing for early error detection in programs. This service utilizes the framework to
  * compile Java classes and detect potential type errors.
  */
 public class CheckerFrameworkCompiler {
-    private static final Logger LOGGER = LogManager.getLogger(CheckerFrameworkCompiler.class);
 
+    private CheckerFrameworkCompiler() {}
+
+    private static final Logger LOGGER = LogManager.getLogger(CheckerFrameworkCompiler.class);
 
     /**
      * Compiles a Java class using the Checker Framework.
      *
-     * @param classPath the path to the Java class that needs to be compiled
+     * @param sourceFile the path to the Java source file that needs to be compiled
      * @return a string containing any errors produced during the compilation
+     * TODO: what is returned if there are no errors produced? I think the empty string.
      * @throws IOException If there's an error in executing the compilation command or reading its output
      */
-    public String compileWithCheckerFramework(String classPath) throws IOException {
-        LOGGER.info("Attempting to compile Java class using Checker Framework: {}", classPath);
+    // TODO: this method is going to need to be modified to compile more than one file at a time.
+    // Another concern is that the Java compiler generally needs to be invoked from a specific
+    // working directory, which is related to the package of the target class: for example, to
+    // compile a file containing the public class com.bar.Foo, the compiler must be invoked
+    // on a file whose relative path to the working directory is ./com/bar/Foo.java.
+    public static String compile(String sourceFile) throws IOException {
+        LOGGER.info("Attempting to compile Java class using Checker Framework: {}", sourceFile);
 
         // Compilation command with Checker Framework
-        String[] command = compileCheckedClassCommand(classPath);
+        String[] command = compileCheckedClassCommand(sourceFile);
         LOGGER.debug("Executing compilation command: {}", String.join(" ", command));
 
         Process compileProcess = Runtime.getRuntime().exec(command);
@@ -36,9 +44,9 @@ public class CheckerFrameworkCompiler {
 
         String extractedError = extractError(errorOutput);
         if (!extractedError.isEmpty()) {
-            LOGGER.info("Compilation successful for class: {}", classPath);
+            LOGGER.info("Compilation successful for class: {}", sourceFile);
         } else {
-            LOGGER.warn("Compilation error for class {}: {}", classPath, extractedError);
+            LOGGER.warn("Compilation error for class {}: {}", sourceFile, extractedError);
         }
         return extractError(errorOutput);
     }
@@ -50,6 +58,11 @@ public class CheckerFrameworkCompiler {
      * @return a string representation of the stream's content
      * @throws IOException If there's an error in reading from the stream
      */
+    // TODO: I don't think we need to implement this ourselves; we could use
+    // any of the answers of this SO question: https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java.
+    // I'd prefer the Guava IOUtils, solution, probably: bringing in that
+    // dependency won't pollute our dependency tree, since the CF already depends on it
+    // (and we depend on the CF).
     private static String streamToString(InputStream stream) throws IOException {
         LOGGER.debug("Converting input stream to string...");
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -73,7 +86,7 @@ public class CheckerFrameworkCompiler {
      * @param errorMessage the error string to extract messages from
      * @return the extracted error message, or an empty string if the "error:" pattern isn't found
      */
-    private String extractError(String errorMessage) {
+    private static String extractError(String errorMessage) {
         LOGGER.debug("Attempting to extract error from error message.");
 
         /**
@@ -99,10 +112,15 @@ public class CheckerFrameworkCompiler {
      * @param checkedClassPath the path to the Java class to be compiled
      * @return an array of strings representing the compilation command
      */
-    private String[] compileCheckedClassCommand(String checkedClassPath) {
+    private static String[] compileCheckedClassCommand(String checkedClassPath) {
         LOGGER.info("Constructing compilation command for Java class: {}", checkedClassPath);
 
         Configuration config = Configuration.getInstance();
+        // TODO: The build system should manage this dependency. As a quick improvement, we could make
+        // this config file point at the local Maven repository. However, it would be best if we
+        // can get this information from Gradle directly.
+        // Alternatively, we could modify this code so that rather than shelling out to call the CF,
+        // it invokes it directly (and then we add the CF as a Gradle dependency).
         String checkerJar = config.getPropertyValue("checker.jar.file");
         String checkerClasspath = config.getPropertyValue("checker.classpath");
         String checkerCommands = config.getPropertyValue("checker.commands");

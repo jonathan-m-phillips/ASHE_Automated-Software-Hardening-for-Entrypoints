@@ -19,6 +19,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Optional;
 
+// TODO: this class has no fields, so it would be better to make it non-instantiable
+// (by making its no-arguments constructor private) and then making all of its methods
+// static.
 /**
  * Provides functionality to replace Java methods within a given file.
  * <p>
@@ -29,13 +32,16 @@ public class MethodReplacementService {
     private static final Logger LOGGER = LogManager.getLogger(MethodReplacementService.class);
 
     /**
-     * Replaces an existing Java method in the specified file with a new, updated method.
+     * Replaces an existing Java method in the specified file with a new, updated method body.
+     * The signature of the new method must be identical to the signature of the old method.
      *
-     * @param filePath      the path to the Java file containing the method to be replaced.
-     * @param newMethodCode the new method code to replace the existing method.
+     * @param filePath      the (TODO: absolute or relative?) path to the Java file containing the method to be replaced.
+     * @param newMethodCode the new method code to replace the existing method (including both
+     *                      the method's signature and its body, exactly as it would appear
+     *                      in a Java source file).
      * @return {@code true} if the replacement operation was successful; {@code false} otherwise.
      */
-    public boolean replacePreviousMethod(String filePath, String newMethodCode) {
+    public boolean replaceMethod(String filePath, String newMethodCode) {
         LOGGER.info("Attempting to replace method in file: {}", filePath);
 
         Path path = Paths.get(filePath);
@@ -78,10 +84,17 @@ public class MethodReplacementService {
     /**
      * Checks if the extracted method signature is both complete and conforms to the expected
      * format of a valid Java method signature.
+     * TODO: is it possible for the signature not to have the expected format? The method's implementation
+     * appears to only check for completeness.
      *
      * @param signature the method signature to be checked
      * @return {@code true} if the method signature is complete and a valid Java method signature; {@code false} otherwise.
      */
+    // TODO: this is more of an opinion, but I strongly prefer to import inner classes directly
+    // rather than using the Outer.Inner format (as you've done for the parameter on the next line).
+    // I prefer this format because I find it makes the code more readable; I only use the Outer.Inner
+    // format when the inner class name is so generic that it doesn't make sense on its own, such as
+    // Map.Entry or Tree.Kind.
     private boolean isValidMethodSignature(JavaCodeParser.MethodSignature signature) {
         boolean isValidSig =
                 signature.returnType() != null &&
