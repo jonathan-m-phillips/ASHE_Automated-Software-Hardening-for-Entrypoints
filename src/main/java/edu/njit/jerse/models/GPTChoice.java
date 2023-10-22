@@ -1,4 +1,4 @@
-package njit.JerSE.models;
+package edu.njit.jerse.models;
 
 /**
  * Represents a choice provided by the ChatGPT API as part of its response.

@@ -1,14 +1,10 @@
-// TODO: package names in Java are, by convention, supposed to be "reverse URLs". NJIT's
-// web address is njit.edu, so a corresponding software package would be named edu.njit...
-// Further, the convention in Java is to use all-lowercase. So, we should change the package
-// names of all of the classes in this project so that they are prefixed by "edu.njit.jerse".
-package njit.JerSE;
+package edu.njit.jerse;
 
-import njit.JerSE.services.CheckerFrameworkCompiler;
-import njit.JerSE.services.GPTApiClient;
-import njit.JerSE.services.MethodReplacementService;
-import njit.JerSE.utils.Configuration;
-import njit.JerSE.utils.JavaCodeParser;
+import edu.njit.jerse.services.CheckerFrameworkCompiler;
+import edu.njit.jerse.services.MethodReplacementService;
+import edu.njit.jerse.utils.Configuration;
+import edu.njit.jerse.utils.JavaCodeParser;
+import edu.njit.jerse.services.GPTApiClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,6 +13,8 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+// TODO: ASHE.java was restructured in the development branch.
+// TODO: changes were made in this CR, but might need to be looked at again later on.
 /**
  * ASHE provides a means to interact with GPT to get suggestions for
  * correcting Java code. The {@link #fixJavaCodeUsingGPT(String)} method
@@ -39,33 +37,21 @@ public class ASHE {
     private final String PROMPT_START = config.getPropertyValue("gpt.prompt.start");
     private final String PROMPT_END = config.getPropertyValue("gpt.prompt.end");
 
-    // TODO: a "Java class file" is a technical term for the output of the Java compiler,
-    // which is not what you mean here (I think): `sourceFile` is actually a Java source
-    // file (i.e., a .java file).
-    // TODO: what about programs with more than one source file? Even after applying Specimin,
-    // most programs will require multiple source files (though maybe we only need to pass
-    // one of them to GPT?).
-    // TODO: whenever you mention a path, you should say whether it is a relative path, and absolute
-    // path, or both. It might be better to change the parameter's type from String to Path
-    // to avoid this issue.
+    // TODO: Look into adding functionality for multiple classes.
     /**
      * Fixes Java code using suggestions from GPT.
      * <p>
      *
-     * @param sourceFile the path to the Java class file to be corrected
+     * @param absoluteClassPath the absolute path to the Java class file to be corrected
      * @throws IOException              if there's an issue accessing the file or writing to it
      * @throws FileNotFoundException    if the provided file path does not point to a valid file
      * @throws IllegalArgumentException if the GPT response is unexpected
      * @throws InterruptedException     if the API call is interrupted
      */
-    // TODO: I prefer all methods to have an access modifier: the "no access modifier = access only
-    // from the same package" design of Java is confusing. When I actually intend that, I usually add
-    // a comment like the one below (although I suspect that this method should be public rather than
-    // package-private.
-    /* package-private */ void fixJavaCodeUsingGPT(String sourceFile) throws IOException, FileNotFoundException, IllegalArgumentException, InterruptedException, ExecutionException, TimeoutException {
-        MethodReplacementService methodReplacement = new MethodReplacementService();
-        JavaCodeParser extractor = new JavaCodeParser();
-        String errorOutput = CheckerFrameworkCompiler.compile(sourceFile);
+    public void fixJavaCodeUsingGPT(String absoluteClassPath)
+            throws IOException, FileNotFoundException, IllegalArgumentException,
+            InterruptedException, ExecutionException, TimeoutException {
+        String errorOutput = CheckerFrameworkCompiler.compile(absoluteClassPath);
         GPTApiClient gptApiClient = new GPTApiClient();
 
         if (errorOutput.isEmpty()) {
@@ -77,12 +63,15 @@ public class ASHE {
 
         while (!errorOutput.isEmpty()) {
 
-            // TODO: this will fail if the input file contains more than one file. It might be
-            // better to use something similar to Specimin's TargetMethodFinderVisitor class to
-            // locate the target method more reliably. If nothing else, this method's documentation
-            // should explain this limitation: if an error is issued in a method in an inner class,
-            // for example, ASHE's prompt to GPT will be wrong.
-            String methodWithError = String.valueOf(extractor.extractFirstClassFromFile(sourceFile));
+            // TODO: This issue was addressed in the development branch. Please see changes there.
+            // We are getting a class by a specific method name that is passed in from the command line.
+            // We might need to investigate the new method to see if we can extract multiple classes.
+            // I.E. com.example.TestClass#testMethod(), where testMethod is the method name.
+            // extractClassByMethodName(filePath, methodName);
+            // We are doing it this way since we want to get the specific class, but we are only passing in
+            // Specimin args. The intent for this is to minimize the amount of arguments needed in the command line.
+            // TODO: We are not using Specimin arguments in this branch.
+            String methodWithError = String.valueOf(JavaCodeParser.extractFirstClassFromFile(absoluteClassPath));
 
             String prompt = methodWithError +
                     "\n" +
@@ -93,7 +82,7 @@ public class ASHE {
                     PROMPT_END;
 
             String gptCorrection = gptApiClient.fetchGPTResponse(prompt);
-            String codeBlock = extractor.extractJavaCodeBlockFromResponse(gptCorrection);
+            String codeBlock = JavaCodeParser.extractJavaCodeBlockFromResponse(gptCorrection);
 
             if (codeBlock.isEmpty()) {
                 LOGGER.error("Could not extract code block from GPT response.");
@@ -102,7 +91,7 @@ public class ASHE {
 
             LOGGER.info("Code block extracted from GPT response:" + System.lineSeparator() + codeBlock);
 
-            if (!methodReplacement.replaceMethod(sourceFile, codeBlock)) {
+            if (!MethodReplacementService.replaceMethod(absoluteClassPath, codeBlock)) {
                 LOGGER.error("Failed to write code to file.");
                 return;
             }
@@ -110,7 +99,7 @@ public class ASHE {
             LOGGER.info("File written successfully. Recompiling with Checker Framework to check for additional warnings...");
 
             // This will be checked at the start of the next iteration
-            errorOutput = CheckerFrameworkCompiler.compile(sourceFile);
+            errorOutput = CheckerFrameworkCompiler.compile(absoluteClassPath);
 
             if (!errorOutput.isEmpty()) {
                 LOGGER.warn("Additional error(s) found after recompiling:" + System.lineSeparator() + errorOutput);

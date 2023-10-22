@@ -1,10 +1,12 @@
-package njit.JerSE.services;
+package edu.njit.jerse.services;
 
-import njit.JerSE.utils.Configuration;
+import edu.njit.jerse.utils.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.checkerframework.com.google.common.io.CharStreams;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Provides static methods for compiling Java classes using the Checker Framework.
@@ -23,15 +25,13 @@ public class CheckerFrameworkCompiler {
      * Compiles a Java class using the Checker Framework.
      *
      * @param sourceFile the path to the Java source file that needs to be compiled
-     * @return a string containing any errors produced during the compilation
-     * TODO: what is returned if there are no errors produced? I think the empty string.
+     * @return a string containing any errors produced during the compilation and
+     *         if there are no errors and empty string is returned
      * @throws IOException If there's an error in executing the compilation command or reading its output
      */
     // TODO: this method is going to need to be modified to compile more than one file at a time.
-    // Another concern is that the Java compiler generally needs to be invoked from a specific
-    // working directory, which is related to the package of the target class: for example, to
-    // compile a file containing the public class com.bar.Foo, the compiler must be invoked
-    // on a file whose relative path to the working directory is ./com/bar/Foo.java.
+    // TODO: now compileWithCheckerFramework(String classPath)
+    // No issues compiling. We are using a temporary directory that stores the files that need to be compiled.
     public static String compile(String sourceFile) throws IOException {
         LOGGER.info("Attempting to compile Java class using Checker Framework: {}", sourceFile);
 
@@ -40,7 +40,7 @@ public class CheckerFrameworkCompiler {
         LOGGER.debug("Executing compilation command: {}", String.join(" ", command));
 
         Process compileProcess = Runtime.getRuntime().exec(command);
-        String errorOutput = streamToString(compileProcess.getErrorStream());
+        String errorOutput = CharStreams.toString(new InputStreamReader(compileProcess.getErrorStream(), StandardCharsets.UTF_8));
 
         String extractedError = extractError(errorOutput);
         if (!extractedError.isEmpty()) {
@@ -49,30 +49,6 @@ public class CheckerFrameworkCompiler {
             LOGGER.warn("Compilation error for class {}: {}", sourceFile, extractedError);
         }
         return extractError(errorOutput);
-    }
-
-    /**
-     * Captures the content of an input stream into a string.
-     *
-     * @param stream the input stream to capture
-     * @return a string representation of the stream's content
-     * @throws IOException If there's an error in reading from the stream
-     */
-    // TODO: I don't think we need to implement this ourselves; we could use
-    // any of the answers of this SO question: https://stackoverflow.com/questions/309424/how-do-i-read-convert-an-inputstream-into-a-string-in-java.
-    // I'd prefer the Guava IOUtils, solution, probably: bringing in that
-    // dependency won't pollute our dependency tree, since the CF already depends on it
-    // (and we depend on the CF).
-    private static String streamToString(InputStream stream) throws IOException {
-        LOGGER.debug("Converting input stream to string...");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            stringBuilder.append(line).append(System.lineSeparator());
-        }
-        LOGGER.debug("Finished converting stream to string.");
-        return stringBuilder.toString();
     }
 
     /**

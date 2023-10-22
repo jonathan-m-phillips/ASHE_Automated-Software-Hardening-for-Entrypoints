@@ -1,4 +1,4 @@
-package njit.JerSE.models;
+package edu.njit.jerse.models;
 
 /**
  * Provides details about the token usage for a ChatGPT API request and response.

@@ -1,13 +1,13 @@
-package njit.JerSE.services;
+package edu.njit.jerse.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import njit.JerSE.api.ApiService;
-import njit.JerSE.models.GPTMessage;
-import njit.JerSE.models.GPTModel;
-import njit.JerSE.models.GPTRequest;
-import njit.JerSE.models.GPTResponse;
-import njit.JerSE.utils.Configuration;
+import edu.njit.jerse.utils.Configuration;
+import edu.njit.jerse.api.ApiService;
+import edu.njit.jerse.models.GPTMessage;
+import edu.njit.jerse.models.GPTModel;
+import edu.njit.jerse.models.GPTRequest;
+import edu.njit.jerse.models.GPTResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -74,9 +74,6 @@ public class GPTApiClient {
         GPTMessage userMessage = new GPTMessage(GPT_USER, prompt);
         GPTMessage[] messages = new GPTMessage[]{systemMessage, userMessage};
 
-        // TODO: this debug message is misleading, since it's printed before
-        // the object is actually created.
-        LOGGER.debug("GPT request object created successfully.");
         return new GPTRequest(GPTModel.GPT_4, messages);
     }
 
@@ -89,6 +86,7 @@ public class GPTApiClient {
      */
     private String createApiRequestBody(String prompt) throws JsonProcessingException {
         GPTRequest gptRequest = createGptRequestObject(prompt);
+        LOGGER.debug("GPT request object created successfully.");
         return objectMapper.writeValueAsString(gptRequest);
     }
 
@@ -127,10 +125,6 @@ public class GPTApiClient {
      * @throws IOException if processing the response body fails
      */
     private String handleApiResponse(HttpResponse<String> httpResponse) throws IOException {
-        // TODO: why not reuse the ObjectMapper that this class stores in a field? My impression is
-        // that ObjectMapper should be reusable.
-        ObjectMapper objectMapper = new ObjectMapper();
-
         if (httpResponse.statusCode() == 200) {
             GPTResponse gptResponse = objectMapper.readValue(httpResponse.body(), GPTResponse.class);
             LOGGER.info("Successfully retrieved GPT Prompt response.");

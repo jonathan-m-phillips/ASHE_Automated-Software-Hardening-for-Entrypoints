@@ -1,6 +1,6 @@
-package njit.JerSE.services;
+package edu.njit.jerse.services;
 
-import njit.JerSE.utils.Configuration;
+import edu.njit.jerse.utils.Configuration;
 
 import java.io.BufferedReader;
 import java.io.File;

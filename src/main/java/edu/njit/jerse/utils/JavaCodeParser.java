@@ -1,4 +1,4 @@
-package njit.JerSE.utils;
+package edu.njit.jerse.utils;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -22,17 +22,13 @@ import java.util.stream.Collectors;
  * This class provides methods for extracting method signature, method bodies,
  * class declarations, and Java code blocks from a given string or file.
  */
-public class JavaCodeParser {
+public final class JavaCodeParser {
 
-    // TODO: Why not make this Pattern static? That would enable you to 1) make this class non-instantiable,
-    // and 2) convert all of its methods to static functions, which I think makes more sense for a utility
-    // class.
-    private final Pattern javaCodeBlockPattern;
+    private static final Pattern javaCodeBlockPattern = Pattern.compile("```java(.*?)```", Pattern.DOTALL);;
     private static final Logger LOGGER = LogManager.getLogger(JavaCodeParser.class);
 
-    public JavaCodeParser() {
-        this.javaCodeBlockPattern = Pattern.compile("```java(.*?)```", Pattern.DOTALL);
-        LOGGER.info("JavaCodeParser initialized");
+    private JavaCodeParser() {
+        throw new AssertionError("Cannot instantiate JavaCodeParser");
     }
 
     /**
@@ -47,15 +43,19 @@ public class JavaCodeParser {
     }
 
     /**
-     * Extracts method signature from a given method string.
+     * Extracts the method signature from a given method string.
+     * <p>
+     * This method attempts to parse the provided method string to determine
+     * its return type, name, and parameters. If successful, a {@link MethodSignature}
+     * object is returned. If the method string cannot be parsed correctly, or
+     * if any part of the method signature cannot be determined, an
+     * {@code IllegalStateException} is thrown.
      *
-     * @param method the method as a string
-     * @return an Optional containing {@link MethodSignature} if found, else empty
+     * @param method the method string to be parsed
+     * @return a {@link MethodSignature} object representing the parsed method signature
+     * @throws IllegalStateException if the method signature cannot be extracted
      */
-    // TODO: I prefer using null to indicate the lack of a value rather than Optional.
-    // For a discussion of why, see Mike's article, which does a better job of explaining
-    // why than I possibly could: https://homes.cs.washington.edu/~mernst/advice/nothing-is-better-than-optional.html
-    public Optional<MethodSignature> extractMethodSignature(String method) {
+    public static MethodSignature extractMethodSignature(String method) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(method);
 
@@ -65,28 +65,42 @@ public class JavaCodeParser {
             if (methodDeclarationOpt.isPresent()) {
                 MethodDeclaration methodDeclaration = methodDeclarationOpt.get();
 
-                // Get return type
-                String returnType = methodDeclaration.getType().asString();
+                String returnType = null;
+                String methodName = null;
+                String parameters = null;
 
-                // Get method name
-                String methodName = methodDeclaration.getName().asString();
+                try {
+                    returnType = methodDeclaration.getType().asString();
+                } catch (Exception e) {
+                    LOGGER.error("Error extracting the return type from method declaration.", e);
+                }
 
-                // Get method parameters
-                String parameters = methodDeclaration.getParameters()
-                        .stream()
-                        .map(p -> p.getType() + " " + p.getName())
-                        .collect(Collectors.joining(", "));
+                try {
+                    methodName = methodDeclaration.getName().asString();
+                } catch (Exception e) {
+                    LOGGER.error("Error extracting the method name from method declaration.", e);
+                }
 
-                LOGGER.debug("Extracted method signature: ReturnType={} MethodName={} Parameters={}", returnType, methodName, parameters);
-                return Optional.of(new MethodSignature(returnType, methodName, parameters));
+                try {
+                    parameters = methodDeclaration.getParameters()
+                            .stream()
+                            .map(p -> p.getType() + " " + p.getName())
+                            .collect(Collectors.joining(", "));
+                } catch (Exception e) {
+                    LOGGER.error("Error extracting the method parameters from method declaration.", e);
+                }
+
+                if (returnType != null && methodName != null && parameters != null) {
+                    LOGGER.debug("Extracted method signature: ReturnType={} MethodName={} Parameters={}", returnType, methodName, parameters);
+                    return new MethodSignature(returnType, methodName, parameters);
+                } else {
+                    throw new IllegalStateException("Failed to extract method signature.");
+                }
             }
-            // TODO: it's good practice to try to limit the scope of try-blocks as much as possible,
-            // and have different error messages/logging/catch blocks for different kinds of problems
-            // that might occur.
         } catch (Exception ex) {
             LOGGER.error("Failed to extract method signature: ", ex);
         }
-        return Optional.empty(); // return an empty Optional if no value is present
+        throw new IllegalStateException("Failed to extract method signature.");
     }
 
     /**
@@ -95,7 +109,7 @@ public class JavaCodeParser {
      * @param method the entire Java method as a string
      * @return the body of the method as a string, or an empty string if not found
      */
-    public String extractMethodBody(String method) {
+    public static String extractMethodBody(String method) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(method);
             MethodDeclaration methodDeclaration = cu.findFirst(MethodDeclaration.class).orElse(null);
@@ -119,7 +133,7 @@ public class JavaCodeParser {
      * @return the first class or interface declaration from the file
      * @throws FileNotFoundException If the file cannot be read
      */
-    public ClassOrInterfaceDeclaration extractFirstClassFromFile(String filePath) throws FileNotFoundException {
+    public static ClassOrInterfaceDeclaration extractFirstClassFromFile(String filePath) throws FileNotFoundException {
         try (FileInputStream fis = new FileInputStream(filePath)) {
             CompilationUnit cu = StaticJavaParser.parse(fis);
             List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
@@ -151,7 +165,7 @@ public class JavaCodeParser {
      * method fails, so that callers are forced to deal with that situation (presumably by re-invoking
      * the GPT API?).
      */
-    public String extractJavaCodeBlockFromResponse(String response) {
+    public static String extractJavaCodeBlockFromResponse(String response) {
         Matcher matcher = javaCodeBlockPattern.matcher(response);
 
         if (matcher.find()) {

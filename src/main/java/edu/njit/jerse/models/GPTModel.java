@@ -1,4 +1,4 @@
-package njit.JerSE.models;
+package edu.njit.jerse.models;
 
 /**
  * Represents the various models provided by the ChatGPT API.

@@ -1,4 +1,4 @@
-package njit.JerSE.models;
+package edu.njit.jerse.models;
 
 /**
  * Represents a response from the ChatGPT API after initiating a chat conversation.

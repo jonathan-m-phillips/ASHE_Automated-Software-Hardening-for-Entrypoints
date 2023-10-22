@@ -1,4 +1,4 @@
-package njit.JerSE;
+package edu.njit.jerse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+// TODO: These changes were requested after the development branch was created, committed, and sent for CR/PR.
+// TODO: Therefore, there will be merge conflicts with the development branch that will need to be resolved.
+// TODO: Issue in this branch may have been resolved already in development
 /**
  * The main entry point for the application.
  * This class handles the initiation of the GPTPrototype to fix Java code.
@@ -36,19 +39,12 @@ public class Main {
         }
 
         LOGGER.info("Running ASHE...");
-        // TODO: When SPECIMIN is running properly,
-        //  we must accept more arguments to run SPECIMIN tool
+
         // class path of the class to be checked
         String classPath = args[0];
         ASHE ashe = new ASHE();
         ashe.fixJavaCodeUsingGPT(classPath);
     }
 
-
-    // TODO: Leave for SPECIMIN tool testing
-    // TODO: Receive help SPECIMIN team to run SPECIMIN tool
-//    public static void main(String[] args) {
-//        SpeciminTool specimin = new SpeciminTool();
-//        specimin.runSpeciminTool(args[0], args[1], args[2], args[3]);
-//    }
+    // TODO: Specimin is running properly on development branch. Main.java does not exist.
 }

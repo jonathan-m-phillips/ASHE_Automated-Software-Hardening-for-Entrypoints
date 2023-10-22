@@ -1,4 +1,4 @@
-package njit.JerSE.api;
+package edu.njit.jerse.api;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
