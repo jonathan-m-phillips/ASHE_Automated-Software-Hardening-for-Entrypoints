@@ -38,8 +38,12 @@ public class ModelValidator {
      * @return a {@code String} with the default model name
      */
     public static String getDefaultModel() {
-        LOGGER.info("Returning default model: " + VALID_MODELS.getFirst());
-        return VALID_MODELS.getFirst();
+        if (!VALID_MODELS.isEmpty()) {
+            LOGGER.info("Returning default model: " + VALID_MODELS.get(0));
+            return VALID_MODELS.get(0);
+        }
+
+        throw new IllegalStateException("No default model found. The list of valid models is empty.");
     }
 
     /**
