@@ -44,6 +44,7 @@ public class ModelValidator {
             return VALID_MODELS.get(0);
         }
 
+        LOGGER.error("No default model found. The list of valid models is empty.");
         throw new IllegalStateException("No default model found. The list of valid models is empty.");
     }
 
