@@ -39,13 +39,13 @@ public class ModelValidator {
      * @throws IllegalStateException if the list of valid models is empty
      */
     public static String getDefaultModel() {
-        if (!VALID_MODELS.isEmpty()) {
-            LOGGER.info("Returning default model: " + VALID_MODELS.get(0));
-            return VALID_MODELS.get(0);
+        if (VALID_MODELS.isEmpty()) {
+            LOGGER.error("No default model found. The list of valid models is empty.");
+            throw new IllegalStateException("No default model found. The list of valid models is empty.");
         }
 
-        LOGGER.error("No default model found. The list of valid models is empty.");
-        throw new IllegalStateException("No default model found. The list of valid models is empty.");
+        LOGGER.info("Returning default model: " + VALID_MODELS.get(0));
+        return VALID_MODELS.get(0);
     }
 
     /**
