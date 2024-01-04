@@ -36,6 +36,7 @@ public class ModelValidator {
      * Gets the default model name. This method returns the first model in the list of valid models.
      *
      * @return a {@code String} with the default model name
+     * @throws IllegalStateException if the list of valid models is empty
      */
     public static String getDefaultModel() {
         if (!VALID_MODELS.isEmpty()) {
