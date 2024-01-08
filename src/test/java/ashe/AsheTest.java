@@ -14,20 +14,17 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class AsheTest {
 
-//    private final static String absolutePath = "/your/absolute/path/to/ASHE_Automated-Software-Hardening-for-Entrypoints";
-    private final static String absolutePath = "/Users/jonathanphillips/Desktop/NJIT/Research/ASHE/ASHE_Automated-Software-Hardening-for-Entrypoints";
-    private final static String rootPath = "/src/test/resources";
-    private final static String absoluteRootPath = absolutePath + rootPath;
-    private final static String targetFilePath = "ashe/TestFileToMinimize.java";
-    private final static String targetMethodName = "ashe.TestFileToMinimize#testSocket(int)";
-    private final static String classFile = "ashe/TestFileToMinimize.class";
+    private static final String ROOT_PATH = "src/test/resources";
+    private static final String TARGET_FILE_PATH = "ashe/TestFileToMinimize.java";
+    private static final String TARGET_METHOD_NAME = "ashe.TestFileToMinimize#testSocket(int)";
+    private static final String CLASS_FILE = "ashe/TestFileToMinimize.class";
 
     @Test
     void mockTest() throws Exception {
         String model = "mock";
 
         String originalContent = readContent();
-        Ashe.run(absoluteRootPath, targetFilePath, targetMethodName, model);
+        Ashe.run(getAbsolutePath(), TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
         String modifiedContent = readContent();
 
         assertNotEquals(originalContent, modifiedContent, "The file content should be modified.");
@@ -38,7 +35,7 @@ class AsheTest {
         String model = "dryrun";
 
         String originalContent = readContent();
-        Ashe.run(absoluteRootPath, targetFilePath, targetMethodName, model);
+        Ashe.run(getAbsolutePath(), TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
         String modifiedContent = readContent();
 
         assertEquals(originalContent, modifiedContent, "The file content should not be modified in dry run mode.");
@@ -47,7 +44,7 @@ class AsheTest {
     /** A .class file is generated when running Ashe. This file is deleted after each test. */
     @AfterEach
     void classCleanUp() throws Exception {
-        Path classFilePath = Paths.get(absoluteRootPath, classFile);
+        Path classFilePath = Paths.get(getAbsolutePath(), CLASS_FILE);
 
         if (Files.exists(classFilePath)) {
             Files.delete(classFilePath);
@@ -55,7 +52,16 @@ class AsheTest {
     }
 
     private String readContent() throws IOException {
-        Path path = Paths.get(absoluteRootPath, targetFilePath);
+        Path path = Paths.get(getAbsolutePath(), TARGET_FILE_PATH);
         return Files.readString(path);
+    }
+
+    private static String getProjectRoot() {
+        String root = System.getProperty("user.dir");
+        return root != null ? root : "";
+    }
+
+    private static String getAbsolutePath() {
+        return Paths.get(getProjectRoot(), AsheTest.ROOT_PATH).toString();
     }
 }
