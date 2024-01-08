@@ -46,6 +46,7 @@ checkerFramework {
             'org.checkerframework.checker.optional.OptionalChecker',
             'org.checkerframework.checker.resourceleak.ResourceLeakChecker',
     ]
+    excludeTests = true
 }
 
 

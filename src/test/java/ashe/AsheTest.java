@@ -1,37 +1,61 @@
 package ashe;
 
-import edu.njit.jerse.ashe.services.MethodReplacementService;
-import edu.njit.jerse.ashe.utils.JavaCodeParser;
+import edu.njit.jerse.ashe.Ashe;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class AsheTest {
 
+//    private final static String absolutePath = "/your/absolute/path/to/ASHE_Automated-Software-Hardening-for-Entrypoints";
+    private final static String absolutePath = "/Users/jonathanphillips/Desktop/NJIT/Research/ASHE/ASHE_Automated-Software-Hardening-for-Entrypoints";
+    private final static String rootPath = "/src/test/resources";
+    private final static String absoluteRootPath = absolutePath + rootPath;
+    private final static String targetFilePath = "ashe/TestFileToMinimize.java";
+    private final static String targetMethodName = "ashe.TestFileToMinimize#testSocket(int)";
+    private final static String classFile = "ashe/TestFileToMinimize.class";
+
     @Test
-    void runAsheTest() throws IOException, InterruptedException {
-        /** In order to run these tests, uncomment the following lines and add your own paths */
+    void mockTest() throws Exception {
+        String model = "mock";
 
-//        final String responseFilePath = "src/test/resources/ashe/predefined_response.txt";
-//        final String root = "/absolute/path/to/projectRoot/src/main/java";
-//        final String targetFile = "com/example/SocketClient.java";
-//        final String targetMethod = "com.example.SocketClient#testSocket(int)";
+        String originalContent = readContent();
+        Ashe.run(absoluteRootPath, targetFilePath, targetMethodName, model);
+        String modifiedContent = readContent();
 
-//        JavaCodeCorrectorTest correctorTest = new JavaCodeCorrectorTest(responseFilePath);
+        assertNotEquals(originalContent, modifiedContent, "The file content should be modified.");
+    }
 
-//        String speciminTempDir = correctorTest.minimizeTargetFile(root, targetFile, targetMethod);
-//        assertNotNull(speciminTempDir, "Specimin did not return a temp directory");
-//        final String sourceFilePath = Paths.get(speciminTempDir, targetFile).toString();
-//
-//        boolean errorsReplacedInTargetFile = correctorTest.fixTargetFileErrorsWithGptSimulation(sourceFilePath, targetMethod);
-//        assertTrue(errorsReplacedInTargetFile, "Errors were not successfully replaced in the target file");
+    @Test
+    void dryRunTest() throws Exception {
+        String model = "dryrun";
 
-//        String methodName = JavaCodeParser.extractMethodName(targetMethod);
-//        String originalFilePath = Paths.get(root, targetFile).toString();
-//        boolean isOriginalMethodReplaced = MethodReplacementService.replaceOriginalTargetMethod(sourceFilePath, originalFilePath, methodName);
+        String originalContent = readContent();
+        Ashe.run(absoluteRootPath, targetFilePath, targetMethodName, model);
+        String modifiedContent = readContent();
 
-//        assertTrue(isOriginalMethodReplaced, "Original method was not successfully replaced");
+        assertEquals(originalContent, modifiedContent, "The file content should not be modified in dry run mode.");
+    }
+
+    /** A .class file is generated when running Ashe. This file is deleted after each test. */
+    @AfterEach
+    void classCleanUp() throws Exception {
+        Path classFilePath = Paths.get(absoluteRootPath, classFile);
+
+        if (Files.exists(classFilePath)) {
+            Files.delete(classFilePath);
+        }
+    }
+
+    private String readContent() throws IOException {
+        Path path = Paths.get(absoluteRootPath, targetFilePath);
+        return Files.readString(path);
     }
 }
