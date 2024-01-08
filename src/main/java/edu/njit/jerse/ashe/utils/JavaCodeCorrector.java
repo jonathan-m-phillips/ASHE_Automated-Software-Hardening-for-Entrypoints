@@ -1,9 +1,10 @@
 package edu.njit.jerse.ashe.utils;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import edu.njit.jerse.ashe.ASHE;
+import edu.njit.jerse.ashe.llm.mock.MockResponseClient;
+import edu.njit.jerse.ashe.llm.api.ApiClient;
 import edu.njit.jerse.ashe.services.CheckerFrameworkCompiler;
-import edu.njit.jerse.ashe.services.GPTApiClient;
+import edu.njit.jerse.ashe.llm.openai.GptApiClient;
 import edu.njit.jerse.ashe.services.MethodReplacementService;
 import edu.njit.jerse.ashe.services.SpeciminTool;
 import edu.njit.jerse.config.Configuration;
@@ -14,6 +15,9 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
+
+// TODO: Fix the JavaDocs on this file for formatting and accuracy.
+// TODO: Actually, check the JavaDocs on all files for formatting and accuracy.
 
 /**
  * Responsible for attempting Java code minimization and correction
@@ -28,11 +32,12 @@ import java.util.regex.Pattern;
  */
 public class JavaCodeCorrector {
 
-    private static final Logger LOGGER = LogManager.getLogger(ASHE.class);
+    private static final Logger LOGGER = LogManager.getLogger(JavaCodeCorrector.class);
 
     Configuration config = Configuration.getInstance();
-    private final String PROMPT_START = config.getPropertyValue("gpt.prompt.start");
-    private final String PROMPT_END = config.getPropertyValue("gpt.prompt.end");
+    // TODO: Consider that these prompts might need to change depending on how other LLMs respond to them.
+    private final String PROMPT_START = config.getPropertyValue("llm.prompt.start");
+    private final String PROMPT_END = config.getPropertyValue("llm.prompt.end");
     private static final Pattern TARGET_FILE_PATTERN = Pattern.compile("([a-zA-Z_0-9]+/)*[a-zA-Z_0-9]+\\.java");
     private static final Pattern TARGET_METHOD_PATTERN = Pattern.compile("[a-zA-Z_0-9]+(\\.[a-zA-Z_0-9]+)*#[a-zA-Z_0-9]+\\([^\\)]*\\)");
 
@@ -40,16 +45,25 @@ public class JavaCodeCorrector {
     /**
      * Utilizes GPT API to attempt to fix errors in the target Java file.
      *
-     * @param targetFile   The path to the Java file to be corrected.
-     * @param targetMethod The target method to be corrected.
-     * @return true if errors were successfully corrected; false otherwise.
+     * @param targetFile   the path to the Java file to be corrected
+     * @param targetMethod the target method to be corrected
+     * @param model        the model to be used to correct the errors
+     * @return true if errors were successfully corrected; false otherwise
      * @throws IOException, FileNotFoundException, IllegalArgumentException, InterruptedException, ExecutionException, TimeoutException
      */
-    public boolean fixTargetFileErrorsWithGPT(String targetFile, String targetMethod)
+    public boolean fixTargetFileErrorsWithModel(String targetFile, String targetMethod, String model)
             throws IOException, IllegalArgumentException,
             InterruptedException, ExecutionException, TimeoutException {
 
-        GPTApiClient gptApiClient = new GPTApiClient();
+        ApiClient apiClient = switch (model) {
+            case "gpt-4" -> new GptApiClient();
+            // TODO: Add these LLM APIs to ASHE and uncomment them here.
+            // case "llama" -> new LlamaApiClient();
+            // case "palm" -> new PalmApiClient();
+            // case "grok" -> new GrokApiClient();
+            case "mock" -> new MockResponseClient();
+            default -> throw new IllegalStateException("Unexpected value: " + model);
+        };
 
         String errorOutput = checkedFileError(targetFile);
         if (errorOutput.isEmpty()) {
@@ -63,12 +77,12 @@ public class JavaCodeCorrector {
             String methodName = JavaCodeParser.extractMethodName(targetMethod);
             ClassOrInterfaceDeclaration checkedClass = JavaCodeParser.extractClassByMethodName(targetFile, methodName);
 
-            String gptCorrection = fetchCorrectionFromGPT(gptApiClient, checkedClass, errorOutput);
-            if (gptCorrection.isEmpty()) {
+            String modelCorrection = fetchCorrectionFromModel(apiClient, checkedClass, errorOutput, model);
+            if (modelCorrection.isEmpty()) {
                 return false;
             }
 
-            boolean wasMethodReplaced = MethodReplacementService.replaceMethodInFile(targetFile, checkedClass.getNameAsString(), gptCorrection);
+            boolean wasMethodReplaced = MethodReplacementService.replaceMethodInFile(targetFile, checkedClass.getNameAsString(), modelCorrection);
             if (!wasMethodReplaced) {
                 LOGGER.error("Failed to write code to file.");
                 return false;
@@ -88,19 +102,19 @@ public class JavaCodeCorrector {
     }
 
     /**
-     * Fetches a code correction suggestion from the GPT API for a given error in a file compiled with Checker Framework.
+     * Fetches a code correction suggestion from the LLM API for a given error in a file compiled with Checker Framework.
      *
-     * @param gptApiClient The client for fetching responses from the GPT API.
+     * @param apiClient    the client for fetching responses from the provided LLM API
      * @param checkedClass The class or interface declaration containing the method with errors.
      * @param errorOutput  The error description from the Checker Framework that needs a correction.
-     * @return The corrected code block as suggested by the GPT API, or an empty string if not found.
+     * @return the corrected code block as suggested by the LLM API, or an empty {@code String} if not found.
      * @throws IOException          If there's an error during the API call or parsing.
      * @throws ExecutionException   If the computation threw an exception.
      * @throws InterruptedException If the current thread was interrupted while waiting.
      * @throws TimeoutException     If the wait timed out.
      */
-    private String fetchCorrectionFromGPT(GPTApiClient gptApiClient,
-                                          ClassOrInterfaceDeclaration checkedClass, String errorOutput)
+    private String fetchCorrectionFromModel(ApiClient apiClient,
+                                            ClassOrInterfaceDeclaration checkedClass, String errorOutput, String model)
             throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
         String prompt = checkedClass +
@@ -111,15 +125,15 @@ public class JavaCodeCorrector {
                 System.lineSeparator() +
                 PROMPT_END;
 
-        String gptResponse = gptApiClient.fetchGPTResponse(prompt);
+        String gptResponse = apiClient.fetchApiResponse(prompt, model);
         String codeBlock = JavaCodeParser.extractJavaCodeBlockFromResponse(gptResponse);
 
         if (codeBlock.isEmpty()) {
-            LOGGER.error("Could not extract code block from GPT response.");
-        } else {
-            LOGGER.info("Code block extracted from GPT response:" + System.lineSeparator() + codeBlock);
+            LOGGER.error("Could not extract code block from {} response.", model);
+            return "";
         }
 
+        LOGGER.info("Code block extracted from {} response:" + System.lineSeparator() + codeBlock, model);
         return codeBlock;
     }
 
@@ -130,9 +144,9 @@ public class JavaCodeCorrector {
      * @param targetFile   Path to the target Java file. The format should adhere to certain specifications.
      * @param targetMethod Method within the target file to minimize. The format should adhere to certain specifications.
      * @return The directory where the minimized file is saved.
-     * @throws IOException If there's an error related to file operations during the minimization process.
+     * @throws IOException          If there's an error related to file operations during the minimization process.
      * @throws InterruptedException If the minimization process gets interrupted.
-     * @throws RuntimeException If there's a format error with targetFile or targetMethod, or if the Specimin tool fails to run.
+     * @throws RuntimeException     If there's a format error with targetFile or targetMethod, or if the Specimin tool fails to run.
      */
     public String minimizeTargetFile(String root, String targetFile, String targetMethod)
             throws IOException, InterruptedException {

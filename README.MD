@@ -84,10 +84,11 @@ In our prototype, those three tools are:
     - Create an [API](https://platform.openai.com/account/api-keys) key for the ChatGPT API under View API Keys.
 3. **Add the API key to `config.properties`:**
     - Copy the API key from OpenAI and paste it into the `config.properties` file in the `resources` directory,
-      replacing the `llm.api.key` placeholder.
+      replacing the `openai.api.key` placeholder.
 
 ### Compiling ASHE
 
+> 🔴 **Important Note:** This will be changing to a Gradle build.
 1. **Navigate to project directory:**
     - Open your terminal and navigate to the project root directory using the `cd` command.
 2. **Compile ASHE:**
@@ -99,20 +100,29 @@ In our prototype, those three tools are:
 ### Running ASHE
 
 1. **Execute ASHE:**
+    - > 🔴 **Important Note:** This will be changing to a Gradle build.
     - After successful compilation, run ASHE using the following command:
-      ```bash
-      java -cp ".:../../../libs/*:../resources" edu.njit.jerse.ashe.ASHE "/root/path/to/your/targeted/project" "path/to/targetFile/Example.java" "com.example.Example#foo()"
-      ```
+       ```bash
+       java -cp ".:../../../libs/*:../resources" edu.njit.jerse.ashe.ASHE "/root/path/to/your/targeted/project" "path/to/targetFile/Example.java" "com.example.Example#foo()" "llm-model"
+       ```
 
 **Command Arguments:**
 
-- **--root:** Root directory of the target project.
-    - Example: `/root/path/to/your/targeted/project`
-- **--targetFile:** Source file to search for target methods.
-    - Example: `path/to/targetFile/Example.java`
-- **--targetMethod:** Target method to preserve. Format:
-  `class.fully.qualified.Name#methodName(Param1Type, Param2Type, ...)`.
-    - Example: `com.example.Example#foo()`
+- **--root:** specifies the root directory of the target project
+    - Format: absolute path to the project directory
+    - Example: `--root /root/path/to/your/targeted/project`
+- **--targetFile:** identifies the source file within the project where the target methods are located
+    - Format: relative path from the root directory to the source file
+    - Example: `--targetFile path/to/targetFile/Example.java`
+- **--targetMethod:** specifies the target method that needs to be preserved
+    - Format: `fully.qualified.ClassName#methodName(ParameterType1, ParameterType2, ...)`
+    - Example: `--targetMethod com.example.Example#foo()`
+
+**Optional Argument:**
+- **--model:** large language model to use. Currently, only GPT-4, mock, and dryrun are supported, where mock is a
+  test mode that responds with a mock patch and dryrun is a test mode that skips the error correction process.
+    - Example: `gpt-4`, `mock`, or `dryrun`
+    - Note: if no LLM is specified, the default is `gpt-4`
 
 ### Logging
 
@@ -161,12 +171,27 @@ cloning and Java file processing.
 /absolute/path/to/project
 
 ### Running AsheAutomation
-
+   
 1. **Execute AsheAutomation:**
     - Run AsheAutomation using the following Gradle command:
       ```bash
-      ./gradlew runAsheAutomation -PmodulePath=/path/to/module -ProotProjectPath=/path/to/root/project
+      ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pmodel="llm-model"
       ```
+
+**Command Arguments:**
+
+- **--directoryPath:** specifies the absolute path to the directory containing Java files to be processed
+    - Format: absolute path to the directory
+    - Example: `/absolute/path/to/project/src/main/java/com/example/foo`
+- **--projectRootPath:** indicates the absolute root path of the project
+    - Format: absolute path to the project's root directory
+    - Example: `/absolute/path/to/project`
+
+**Optional Argument:**
+- **--model:** large language model to use. Currently, only GPT-4, mock, and dryrun are supported, where mock is a
+  test mode that responds with a mock patch and dryrun is a test mode that skips the error correction process.
+    - Example: `gpt-4`, `mock`, or `dryrun`
+    - Note: if no LLM is specified, the default is `gpt-4`
 
 ### Running RepositoryAutomationEngine
 
@@ -198,11 +223,30 @@ file containing the details of each repository. Follow these steps to create and
    > 🔴 Important Note: It is crucial to adhere to the specified format for the CSV file to ensure proper
    > processing by the RepositoryAutomationEngine.
 
-5. **Execute RepositoryAutomationEngine:**
+5. **Choose an LLM:**
+   - To use ChatGPT-4, pass `gpt-4` through the arguments.
+   - More LLMs will be added in the future.
+
+6. **Execute RepositoryAutomationEngine:**
     - Run RepositoryAutomationEngine using the following Gradle command:
       ```bash
-      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory"
+      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pmodel="llm-model"
       ```
+
+**Command Arguments:**
+
+- **--csvFilePath:** specifies the path to the CSV file containing repository details
+    - Format: absolute path to the CSV file
+    - Example: `path/to/repositories.csv`
+- **--repoDir:** indicates the directory where the repositories should be cloned
+    - Format: absolute path to the cloning directory
+    - Example: `/path/to/clone/directory`
+
+**Optional Argument:**
+- **--model:** large language model to use. Currently, only GPT-4, mock, and dryrun are supported, where mock is a
+test mode that responds with a mock patch and dryrun is a test mode that skips the error correction process.
+    - Example: `gpt-4`, `mock`, or `dryrun`
+    - Note: if no LLM is specified, the default is `gpt-4`
 
 <br/>
 

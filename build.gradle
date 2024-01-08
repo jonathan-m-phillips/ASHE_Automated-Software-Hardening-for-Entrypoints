@@ -17,6 +17,8 @@ repositories {
     mavenCentral()
 }
 
+ext.checkerFrameworkVersion = '3.38.0' // default value
+
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -29,7 +31,8 @@ dependencies {
     implementation group: 'org.apache.commons', name: 'commons-csv', version: '1.10.0'
     implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '6.7.0.202309050840-r'
     implementation group: 'com.google.guava', name: 'guava', version: '32.1.3-jre'
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    checkerFramework "org.checkerframework:checker:${checkerFrameworkVersion}"
 }
 
 test {
@@ -45,34 +48,86 @@ checkerFramework {
     ]
 }
 
-// TODO: This might contain deprecated code that needs updating.
+
+/**
+ * The following code is for downloading and renaming the Checker Framework jars.
+ * This is necessary because the Checker Framework jars are named with the version number.
+ * If the jars are named with the version number, Checker Framework will not be able to find them.
+ * ASHE is dependent on the Checker Framework during compilation *and* runtime.
+ */
+configurations {
+    checkerFramework
+}
+
+tasks.register('resolveCheckerFrameworkVersion') {
+    doLast {
+        // Resolve the version from the resolved artifacts.
+        checkerFrameworkVersion = configurations.checkerFramework.resolvedConfiguration.resolvedArtifacts.find {
+            it.name == 'checker'
+        }?.moduleVersion?.id?.version ?: checkerFrameworkVersion
+    }
+}
+
+tasks.register('downloadCheckerFramework', Copy) {
+    from configurations.checkerFramework
+    into layout.buildDirectory.dir("libs/checkerframework")
+}
+
+tasks.named('downloadCheckerFramework').configure {
+    mustRunAfter 'resolveCheckerFrameworkVersion'
+}
+
+// Checker Framework is expecting the jars to be named without the version number.
+// If the jars are named with the version number, Checker Framework will not be able to find them.
+tasks.register('renameCheckerFrameworkJars') {
+    dependsOn 'downloadCheckerFramework', 'resolveCheckerFrameworkVersion'
+    doLast {
+        fileTree(layout.buildDirectory.dir("libs/checkerframework")).include('*.jar').each { File file ->
+            // Use the dynamically resolved version to replace in the file name.
+            // For exmaple: checker-3.38.0.jar -> checker.jar
+            if (file.name.endsWith('.jar') && file.name.contains(checkerFrameworkVersion)) {
+                String newName = file.name.replace("-${checkerFrameworkVersion}", "")
+                if (!file.renameTo(new File(file.parent, newName))) {
+                    throw new GradleException("Could not rename ${file.name} to ${newName}")
+                }
+            }
+        }
+    }
+}
+assemble.dependsOn renameCheckerFrameworkJars
+
+
+// TODO: task is deprecated. Use tasks.register instead.
 /* Make Emacs TAGS table */
 task tags(type: Exec) {
-  description "Run etags to create an Emacs TAGS table"
-  environment PATH: "$System.env.PATH:$buildDir/utils/plume-lib/bin"
-  commandLine "bash", "-c", "find src/ -name '*.java' | sort-directory-order | xargs etags"
+    description "Run etags to create an Emacs TAGS table"
+    // TODO: buildDir is deprecated. Use layout.buildDirectory instead.
+    environment PATH: "$System.env.PATH:$buildDir/utils/plume-lib/bin"
+    commandLine "bash", "-c", "find src/ -name '*.java' | sort-directory-order | xargs etags"
 }
 
 // TODO: Create a task to run ASHE#main here
 
 // Command to run AsheAutomation#main
-// ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project"
+// ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pmodel="llm-model"
 tasks.register('runAsheAutomation', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('edu.njit.jerse.automation.AsheAutomation')
     args = [
             project.findProperty('modulePath'),
-            project.findProperty('rootProjectPath')
+            project.findProperty('rootProjectPath'),
+            project.findProperty('model')
     ]
 }
 
 // Command to run RepositoryAutomationEngine#main
-// ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory"
+// ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pmodel="llm-model"
 tasks.register('runRepositoryAutomation', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass.set('edu.njit.jerse.automation.RepositoryAutomationEngine')
     args = [
             project.findProperty('repositoriesCsvPath'),
-            project.findProperty('cloneDirectory')
+            project.findProperty('cloneDirectory'),
+            project.findProperty('model')
     ]
 }
