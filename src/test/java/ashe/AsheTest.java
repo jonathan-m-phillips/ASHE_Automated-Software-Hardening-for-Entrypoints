@@ -9,8 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AsheTest {
 
@@ -23,8 +22,11 @@ class AsheTest {
     void mockTest() throws Exception {
         String model = "mock";
 
+        String absolutePath = getAbsolutePath();
+        assertPathAndFileExist(absolutePath);
+
         String originalContent = readContent();
-        Ashe.run(getAbsolutePath(), TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
+        Ashe.run(absolutePath, TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
         String modifiedContent = readContent();
 
         assertNotEquals(originalContent, modifiedContent, "The file content should be modified.");
@@ -34,8 +36,11 @@ class AsheTest {
     void dryRunTest() throws Exception {
         String model = "dryrun";
 
+        String absolutePath = getAbsolutePath();
+        assertPathAndFileExist(absolutePath);
+
         String originalContent = readContent();
-        Ashe.run(getAbsolutePath(), TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
+        Ashe.run(absolutePath, TARGET_FILE_PATH, TARGET_METHOD_NAME, model);
         String modifiedContent = readContent();
 
         assertEquals(originalContent, modifiedContent, "The file content should not be modified in dry run mode.");
@@ -49,6 +54,12 @@ class AsheTest {
         if (Files.exists(classFilePath)) {
             Files.delete(classFilePath);
         }
+    }
+
+    private void assertPathAndFileExist(String rootPath) {
+        Path path = Paths.get(rootPath, AsheTest.TARGET_FILE_PATH);
+        System.out.println("Resolved path: " + path.toAbsolutePath());
+        assertTrue(Files.exists(path), "File does not exist at path: " + path);
     }
 
     private String readContent() throws IOException {
