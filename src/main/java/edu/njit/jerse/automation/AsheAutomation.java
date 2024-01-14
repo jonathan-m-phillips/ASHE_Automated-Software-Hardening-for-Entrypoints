@@ -227,12 +227,12 @@ public class AsheAutomation {
 
         // If no model is provided, use the default model.
         if (args.length == 2) {
-            processAllJavaFiles(directory, projectRootPath, ModelValidator.getDefaultModel());
+            processAllJavaFiles(directory, projectRootPath, Ashe.MODEL);
             return;
         }
 
-        String model = args[2];
-        ModelValidator.validateModel(model);
-        processAllJavaFiles(directory, projectRootPath, model);
+        Ashe.MODEL = args[2];
+        ModelValidator.validateModel(Ashe.MODEL);
+        processAllJavaFiles(directory, projectRootPath, Ashe.MODEL);
     }
 }

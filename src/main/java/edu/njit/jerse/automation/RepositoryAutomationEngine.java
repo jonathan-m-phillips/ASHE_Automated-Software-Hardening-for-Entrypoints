@@ -250,12 +250,12 @@ public class RepositoryAutomationEngine {
 
         // If no model is provided, use the default model.
         if (args.length == 2) {
-            readAndProcessRepositoriesCsv(csvFilePath, repoDir, ModelValidator.getDefaultModel());
+            readAndProcessRepositoriesCsv(csvFilePath, repoDir, Ashe.MODEL);
             return;
         }
 
-        String model = args[2];
-        ModelValidator.validateModel(model);
-        readAndProcessRepositoriesCsv(csvFilePath, repoDir, model);
+        Ashe.MODEL = args[2];
+        ModelValidator.validateModel(Ashe.MODEL);
+        readAndProcessRepositoriesCsv(csvFilePath, repoDir, Ashe.MODEL);
     }
 }
