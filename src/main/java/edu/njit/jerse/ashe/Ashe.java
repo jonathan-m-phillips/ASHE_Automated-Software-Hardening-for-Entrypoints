@@ -2,12 +2,12 @@ package edu.njit.jerse.ashe;
 
 import edu.njit.jerse.ashe.llm.openai.models.GptModel;
 import edu.njit.jerse.ashe.services.MethodReplacementService;
-import edu.njit.jerse.ashe.services.SpeciminTool;
 import edu.njit.jerse.ashe.utils.JavaCodeCorrector;
 import edu.njit.jerse.ashe.utils.JavaCodeParser;
 import edu.njit.jerse.ashe.utils.ModelValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.plumelib.util.FilesPlume;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 // TODO: Throughout the project, logs must be updated to fix any misleading or duplicate messages.
+// TODO: JavaDocs need to be updated throughout the project.
+// TODO: Logs and Exceptions sharing the same error message could be stored in a String.
 
 /**
  * The {@code Ashe} class orchestrates the correction, minimization, and method
@@ -98,11 +100,10 @@ public class Ashe {
 
         JavaCodeCorrector corrector = new JavaCodeCorrector();
 
-        String speciminTempDir = corrector.minimizeTargetFile(root, targetFile, targetMethod);
-        final Path tempDirPath = Paths.get(speciminTempDir);
+        Path speciminTempDir = corrector.minimizeTargetFile(root, targetFile, targetMethod);
 
         try {
-            final String sourceFilePath = tempDirPath.resolve(targetFile).toString();
+            final String sourceFilePath = speciminTempDir.resolve(targetFile).toString();
 
             if (model.equals("dryrun")) {
                 LOGGER.info("Dryrun mode enabled. Skipping error correction.");
@@ -131,12 +132,12 @@ public class Ashe {
                 throw new RuntimeException("Original method was not replaced.");
             }
         } finally {
-            try {
-                LOGGER.info("Cleaning up temporary directory: " + tempDirPath);
-                SpeciminTool.deleteSpeciminTempDir(tempDirPath);
-            } catch (IOException e) {
-                LOGGER.error("Failed to delete temporary directory: " + tempDirPath, e);
+            LOGGER.info("Cleaning up temporary directory: " + speciminTempDir);
+            boolean deletedTempDir = FilesPlume.deleteDir(speciminTempDir.toFile());
+            if (!deletedTempDir) {
+                LOGGER.error("Failed to delete temporary directory: " + speciminTempDir);
             }
+
             LOGGER.info("Exiting...");
         }
     }

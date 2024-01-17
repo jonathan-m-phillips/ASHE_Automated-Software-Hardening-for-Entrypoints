@@ -12,6 +12,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
@@ -32,6 +35,7 @@ import java.util.regex.Pattern;
  */
 public class JavaCodeCorrector {
 
+    // TODO: Consider this whole class to be a utility class and make the constructor private.
     private static final Logger LOGGER = LogManager.getLogger(JavaCodeCorrector.class);
 
     Configuration config = Configuration.getInstance();
@@ -143,12 +147,13 @@ public class JavaCodeCorrector {
      * @param root         Root directory of the target file.
      * @param targetFile   Path to the target Java file. The format should adhere to certain specifications.
      * @param targetMethod Method within the target file to minimize. The format should adhere to certain specifications.
-     * @return The directory where the minimized file is saved.
+     * @return Path to the minimized directory.
      * @throws IOException          If there's an error related to file operations during the minimization process.
      * @throws InterruptedException If the minimization process gets interrupted.
      * @throws RuntimeException     If there's a format error with targetFile or targetMethod, or if the Specimin tool fails to run.
+     * @throws InvalidPathException If there's an error while trying to get the path to the minimized directory.
      */
-    public String minimizeTargetFile(String root, String targetFile, String targetMethod)
+    public Path minimizeTargetFile(String root, String targetFile, String targetMethod)
             throws IOException, InterruptedException {
         if (!isValidTargetFileFormat(targetFile)) {
             LOGGER.error("Formatting error: targetFile does not adhere to the required format.");
@@ -170,7 +175,17 @@ public class JavaCodeCorrector {
         }
 
         LOGGER.info("Target file minimized successfully.");
-        return minimizedDirectory;
+
+        Path minimizedDirectoryPath;
+        try {
+            minimizedDirectoryPath = Paths.get(minimizedDirectory);
+        } catch (InvalidPathException e) {
+            String errorMessage = "An error occurred while trying to get the path to the minimized directory.";
+            LOGGER.error(errorMessage, e);
+            throw new InvalidPathException(errorMessage, e.getReason());
+        }
+
+        return minimizedDirectoryPath;
     }
 
     /**

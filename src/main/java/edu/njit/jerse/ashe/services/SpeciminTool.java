@@ -1,8 +1,6 @@
 package edu.njit.jerse.ashe.services;
 
 import edu.njit.jerse.ashe.Ashe;
-import edu.njit.jerse.automation.AsheAutomation;
-import edu.njit.jerse.automation.RepositoryAutomationEngine;
 import edu.njit.jerse.config.Configuration;
 import edu.njit.jerse.ashe.utils.JavaCodeCorrector;
 import org.apache.logging.log4j.LogManager;
@@ -11,9 +9,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * A utility class to manage and run Specimin - a specification minimizer tool.
@@ -45,14 +41,14 @@ public final class SpeciminTool {
     }
 
     /**
-     * Executes and manages the {@code Specimin} tool using the specified paths and targets.
+     * Executes and manages the Specimin tool using the specified paths and targets.
      *
-     * @param root         the root directory for the tool
-     * @param targetFile   file to be targeted by the tool
-     * @param targetMethod method to be targeted by the tool
-     * @return the directory path where the minimized file is saved
-     * @throws IOException          if there's an error executing the command or writing the minimized file
-     * @throws InterruptedException if the process execution is interrupted
+     * @param root         The root directory for the tool.
+     * @param targetFile   File to be targeted by the tool.
+     * @param targetMethod Method to be targeted by the tool.
+     * @return The directory path where the minimized file is saved.
+     * @throws IOException          If there's an error executing the command or writing the minimized file.
+     * @throws InterruptedException If the process execution is interrupted.
      */
     public static String runSpeciminTool(String root, String targetFile, String targetMethod)
             throws IOException, InterruptedException {
@@ -60,7 +56,18 @@ public final class SpeciminTool {
 
         Configuration config = Configuration.getInstance();
         String speciminPath = config.getPropertyValue("specimin.tool.path");
-        Path tempDir = createTempDirectory();
+
+        Path tempDir;
+        try {
+            tempDir = Files.createTempDirectory("specimin");
+        } catch (IOException e) {
+            String errorMessage = "Failed to create temporary directory";
+            LOGGER.error(errorMessage, e);
+            throw new IOException(errorMessage, e);
+        }
+        // Delete the temporary directory when the JVM exits.
+        // This is a fail-safe in case Ashe#run fails to delete the temporary directory.
+        tempDir.toFile().deleteOnExit();
 
         String argsWithOption = formatSpeciminArgs(tempDir.toString(), root, targetFile, targetMethod);
 
@@ -74,59 +81,13 @@ public final class SpeciminTool {
     }
 
     /**
-     * Deletes all files and subdirectories in the Specimin temporary directory. This method is specifically
-     * important when automating {@link Ashe} with {@link AsheAutomation} and {@link RepositoryAutomationEngine}.
-     * If the temporary directory is not deleted, many directories will be created and require a lot of
-     * disk space.
+     * Formats the arguments for the Specimin tool.
      *
-     * @param tempDirPath the {@link Path} to the directory that needs to be deleted
-     * @throws IOException if an I/O error occurs during file operations
-     */
-    public static void deleteSpeciminTempDir(Path tempDirPath) throws IOException {
-        if (Files.exists(tempDirPath)) {
-            try (Stream<Path> paths = Files.walk(tempDirPath)) {
-                paths.sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(file -> {
-                            LOGGER.info("Deleting file: " + file.getAbsolutePath());
-                            boolean fileDeleted = file.delete();
-                            if (!fileDeleted) {
-                                LOGGER.error("Failed to delete file: " + file.getAbsolutePath());
-                            }
-                        });
-            }
-            LOGGER.info("Temporary directory deleted successfully");
-            return;
-        }
-        LOGGER.warn("Specified directory does not exist: " + tempDirPath);
-    }
-
-    /**
-     * Creates a temporary directory for storing output from the {@code Specimin} tool.
-     *
-     * @return {@link Path} of the created temporary directory
-     */
-    private static Path createTempDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory("speciminTemp");
-            // Delete the temporary directory when the JVM exits.
-            // This is a fail-safe in case Ashe#run fails to delete the temporary directory.
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            LOGGER.error("Failed to create temporary directory", e);
-            throw new RuntimeException("Failed to create temporary directory", e);
-        }
-    }
-
-    /**
-     * Formats the arguments for the {@code Specimin} tool.
-     *
-     * @param outputDirectory directory for {@code Specimin}'s output
-     * @param root            the root directory for the tool
-     * @param targetFile      file to be targeted by the tool
-     * @param targetMethod    method to be targeted by the tool
-     * @return formatted {@code String} of arguments
+     * @param outputDirectory Directory for Specimin's output.
+     * @param root            The root directory for the tool.
+     * @param targetFile      File to be targeted by the tool.
+     * @param targetMethod    Method to be targeted by the tool.
+     * @return Formatted string of arguments.
      */
     private static String formatSpeciminArgs(String outputDirectory, String root, String targetFile, String targetMethod) {
         String adjustedTargetMethod = JavaCodeCorrector.ensureWhitespaceAfterCommas(targetMethod);
@@ -144,11 +105,11 @@ public final class SpeciminTool {
     }
 
     /**
-     * Prepares the commands to be executed by the {@code Specimin} tool.
+     * Prepares the commands to be executed by the Specimin tool.
      *
-     * @param speciminPath   path to the {@code Specimin} tool
-     * @param argsWithOption formatted arguments {@code String}
-     * @return {@link List} of commands for execution
+     * @param speciminPath   Path to the Specimin tool.
+     * @param argsWithOption Formatted arguments string.
+     * @return List of commands for execution.
      */
     private static List<String> prepareCommands(String speciminPath, String argsWithOption) {
         List<String> commands = new ArrayList<>();
@@ -161,7 +122,7 @@ public final class SpeciminTool {
     /**
      * Logs the commands being executed.
      *
-     * @param commands {@link List} of commands to be logged
+     * @param commands List of commands to be logged.
      */
     private static void logCommands(List<String> commands) {
         LOGGER.info("Executing command:");
@@ -172,12 +133,12 @@ public final class SpeciminTool {
 
     /**
      * // TODO: Specimin path should change to using a jar once we are ready
-     * Starts the {@code Specimin} process with the given commands and path to the {@code Specimin} project.
+     * Starts the Specimin process with the given commands and path to the Specimin project.
      *
-     * @param commands     {@link List} of commands to be executed
-     * @param speciminPath path to the Specimin tool project // TODO: This may be changed to a jar once we are ready
-     * @throws IOException          if there's an error executing the command or reading the output
-     * @throws InterruptedException if the process execution is interrupted
+     * @param commands     List of commands to be executed.
+     * @param speciminPath Path to the Specimin tool project. // TODO: This may be changed to a jar once we are ready
+     * @throws IOException          If there's an error executing the command or reading the output.
+     * @throws InterruptedException If the process execution is interrupted.
      */
     private static void startSpeciminProcess(List<String> commands, String speciminPath)
             throws IOException, InterruptedException {
@@ -197,10 +158,10 @@ public final class SpeciminTool {
     }
 
     /**
-     * Logs the output from the {@code Specimin} process.
+     * Logs the output from the Specimin process.
      *
-     * @param process the running {@code Specimin} process
-     * @throws IOException if there's an error reading the output
+     * @param process The running Specimin process.
+     * @throws IOException If there's an error reading the output.
      */
     private static void logProcessOutput(Process process) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -217,9 +178,9 @@ public final class SpeciminTool {
     /**
      * Finalizes the Specimin process by closing streams and destroying the process.
      *
-     * @param process the running {@code Specimin} process
-     * @throws InterruptedException if the process execution is interrupted
-     * @throws IOException          if there's an error closing the streams
+     * @param process The running Specimin process.
+     * @throws InterruptedException If the process execution is interrupted.
+     * @throws IOException          If there's an error closing the streams.
      */
     private static void finalizeProcess(Process process) throws InterruptedException, IOException {
         try {
