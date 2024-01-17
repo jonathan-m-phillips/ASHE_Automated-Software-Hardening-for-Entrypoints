@@ -325,8 +325,9 @@ public final class MethodReplacementService {
 
         boolean wasOriginalMethodReplaced = replaceMethodInFile(targetFile, checkedClass.getNameAsString(), checkedClass.toString());
         if (!wasOriginalMethodReplaced) {
-            LOGGER.error("Failed to replace the original method in the target file.");
-            throw new RuntimeException("Failed to replace original method in file.");
+            String errorMessage = "Failed to replace the original method in the target file.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
 
         LOGGER.info("Original method in the target file replaced successfully.");

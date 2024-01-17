@@ -73,8 +73,9 @@ public class RepositoryAutomationEngine {
             List<Repository> repositories = readRepositoriesFromCsv(csvFilePath);
             processAllRepositories(repositories, repoDir, model);
         } catch (Exception e) {
-            LOGGER.error("Error processing CSV file: {}", csvFilePath, e);
-            throw new RuntimeException("Error processing CSV file: " + csvFilePath, e);
+            String errorMessage = "Error processing CSV file: " + csvFilePath;
+            LOGGER.error(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
         LOGGER.info("Completed processing CSV file: {}", csvFilePath);
     }
@@ -105,8 +106,9 @@ public class RepositoryAutomationEngine {
                 LOGGER.info("Added repository: {}", repoInfo);
             }
         } catch (IOException e) {
-            LOGGER.error("Error reading CSV file: {}", csvFilePath, e);
-            throw new RuntimeException("Error reading CSV file: " + csvFilePath, e);
+            String errorMessage = "Error reading CSV file: " + csvFilePath;
+            LOGGER.error(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
         return repositories;
     }

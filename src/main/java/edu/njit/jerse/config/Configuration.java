@@ -63,14 +63,16 @@ public class Configuration {
      */
     public String getPropertyValue(String key) {
         if (key == null) {
-            LOGGER.error("Attempted to retrieve a property with a null key.");
-            throw new IllegalArgumentException("Property key must not be null");
+            String errorMessage = "Attempted to retrieve a property with a null key.";
+            LOGGER.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
         String props = properties.getProperty(key);
         if (props == null) {
-            LOGGER.warn("No property value found for key: {}", key);
-            throw new IllegalArgumentException("Property key does not exist");
+            String errorMessage = "No property value found for key: " + key;
+            LOGGER.warn(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
         LOGGER.debug("Retrieved property for key {}: {}", key, props);

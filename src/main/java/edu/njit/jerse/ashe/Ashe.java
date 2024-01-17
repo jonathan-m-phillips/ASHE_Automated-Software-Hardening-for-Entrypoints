@@ -111,8 +111,9 @@ public class Ashe {
                 return;
             }
 
-            LOGGER.error("Errors were found but not replaced with {} response.", model);
-            throw new RuntimeException("Errors were not replaced with " + model + " response.");
+            String errorMessage = "Errors were found but not replaced with " + model + " response.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
         LOGGER.info("Errors replaced with {} response successfully.", model);
 
@@ -121,8 +122,9 @@ public class Ashe {
         boolean isOriginalMethodReplaced = MethodReplacementService.replaceOriginalTargetMethod(sourceFilePath, originalFilePath, methodName);
 
         if (!isOriginalMethodReplaced) {
-            LOGGER.error("Original method was not replaced.");
-            throw new RuntimeException("Original method was not replaced.");
+            String errorMessage = "Original method was not replaced.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
         LOGGER.info("Original method replaced successfully.");
         LOGGER.info("Exiting...");

@@ -55,8 +55,9 @@ public class AsheAutomation {
                         try {
                             processSingleJavaFile(path, rootPath, model);
                         } catch (IOException | ExecutionException | InterruptedException | TimeoutException e) {
-                            LOGGER.error("Error processing Java file: {}", path, e);
-                            throw new RuntimeException("Error processing Java file: " + path, e);
+                            String errorMessage = "Error processing Java file: " + path;
+                            LOGGER.error(errorMessage, e);
+                            throw new RuntimeException(errorMessage, e);
                         }
                     });
         }
@@ -83,7 +84,9 @@ public class AsheAutomation {
         LOGGER.info("Project root path: {}", projectRootPath);
 
         if (!javaFileAbsolutePath.startsWith(projectRootPath)) {
-            throw new IllegalArgumentException(String.format("The project root path %s must be a prefix of the Java file's absolute path %s", projectRootPath, javaFileAbsolutePath));
+            String errorMessage = String.format("The project root path %s must be a prefix of the Java file's absolute path %s", projectRootPath, javaFileAbsolutePath);
+            LOGGER.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
         CompilationUnit cu = StaticJavaParser.parse(javaFilePath);

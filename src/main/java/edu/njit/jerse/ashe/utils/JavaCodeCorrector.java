@@ -151,22 +151,25 @@ public class JavaCodeCorrector {
     public String minimizeTargetFile(String root, String targetFile, String targetMethod)
             throws IOException, InterruptedException {
         if (!isValidTargetFileFormat(targetFile)) {
-            LOGGER.error("Formatting error: targetFile does not adhere to the required format.");
-            throw new RuntimeException("Formatting error: targetFile does not adhere to the required format.");
+            String errorMessage = "Formatting error: targetFile does not adhere to the required format.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
 
         String adjustedTargetMethod = ensureWhitespaceAfterCommas(targetMethod);
         if (!isValidTargetMethodFormat(adjustedTargetMethod)) {
-            LOGGER.error("Formatting error: targetMethod does not adhere to the required format.");
-            throw new RuntimeException("Formatting error: targetMethod does not adhere to the required format.");
+            String errorMessage = "Formatting error: targetMethod does not adhere to the required format.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
 
         LOGGER.info("Minimizing source file...");
         String minimizedDirectory = SpeciminTool.runSpeciminTool(root, targetFile, adjustedTargetMethod);
 
         if (minimizedDirectory.isEmpty()) {
-            LOGGER.error("Specimin tool failed to run or did not produce an output directory.");
-            throw new RuntimeException("Specimin tool failed to run or did not produce an output directory.");
+            String errorMessage = "Specimin tool failed to run or did not produce an output directory.";
+            LOGGER.error(errorMessage);
+            throw new RuntimeException(errorMessage);
         }
 
         LOGGER.info("Target file minimized successfully.");

@@ -40,8 +40,9 @@ public class ModelValidator {
      */
     public static String getDefaultModel() {
         if (VALID_MODELS.isEmpty()) {
-            LOGGER.error("No default model found. The list of valid models is empty.");
-            throw new IllegalStateException("No default model found. The list of valid models is empty.");
+            String errorMessage = "No default model found. The list of valid models is empty.";
+            LOGGER.error(errorMessage);
+            throw new IllegalStateException(errorMessage);
         }
 
         LOGGER.info("Returning default model: " + VALID_MODELS.get(0));
@@ -57,8 +58,9 @@ public class ModelValidator {
      */
     public static void validateModel(String model) throws IllegalArgumentException {
         if (!VALID_MODELS.contains(model)) {
-            LOGGER.error("Invalid model argument provided: " + model);
-            throw new IllegalArgumentException("Invalid model argument provided: " + model);
+            String errorMessage = "Invalid model argument provided: " + model;
+            LOGGER.error(errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
 
         LOGGER.info("Model argument validated successfully: " + model);
