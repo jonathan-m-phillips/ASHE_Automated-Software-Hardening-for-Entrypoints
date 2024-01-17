@@ -1,5 +1,6 @@
 package edu.njit.jerse.ashe.services;
 
+import edu.njit.jerse.ashe.Ashe;
 import edu.njit.jerse.config.Configuration;
 import edu.njit.jerse.ashe.utils.JavaCodeCorrector;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +56,18 @@ public final class SpeciminTool {
 
         Configuration config = Configuration.getInstance();
         String speciminPath = config.getPropertyValue("specimin.tool.path");
-        Path tempDir = createTempDirectory();
+
+        Path tempDir;
+        try {
+            tempDir = Files.createTempDirectory("specimin");
+        } catch (IOException e) {
+            String errorMessage = "Failed to create temporary directory";
+            LOGGER.error(errorMessage, e);
+            throw new IOException(errorMessage, e);
+        }
+        // Delete the temporary directory when the JVM exits.
+        // This is a fail-safe in case Ashe#run fails to delete the temporary directory.
+        tempDir.toFile().deleteOnExit();
 
         String argsWithOption = formatSpeciminArgs(tempDir.toString(), root, targetFile, targetMethod);
 
@@ -66,22 +78,6 @@ public final class SpeciminTool {
         startSpeciminProcess(commands, speciminPath);
 
         return tempDir.toString();
-    }
-
-    /**
-     * Creates a temporary directory for storing output from the Specimin tool.
-     *
-     * @return Path of the created temporary directory.
-     */
-    private static Path createTempDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory("speciminTemp");
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            LOGGER.error("Failed to create temporary directory", e);
-            throw new RuntimeException("Failed to create temporary directory", e);
-        }
     }
 
     /**
@@ -192,7 +188,8 @@ public final class SpeciminTool {
     private static void finalizeProcess(Process process) throws InterruptedException, IOException {
         try {
             int exitValue = process.waitFor();
-            if (exitValue != 0) {
+            // Skip throwing an exception if running in dryrun mode so that the process can continue iterations.
+            if (exitValue != 0 && !Ashe.MODEL.equals("dryrun")) {
                 String errorMessage = "Error executing the command. Exit value: " + exitValue;
                 LOGGER.error(errorMessage);
                 throw new InterruptedException(errorMessage);

@@ -7,14 +7,17 @@ import edu.njit.jerse.ashe.utils.JavaCodeParser;
 import edu.njit.jerse.ashe.utils.ModelValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.plumelib.util.FilesPlume;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 // TODO: Throughout the project, logs must be updated to fix any misleading or duplicate messages.
-// TODO: Fix the project, so we do not need to point to resources and libs in the commands.
+// TODO: JavaDocs need to be updated throughout the project.
+// TODO: Logs and Exceptions sharing the same error message could be stored in a String.
 
 /**
  * The {@code Ashe} class orchestrates the correction, minimization, and method
@@ -63,6 +66,12 @@ public class Ashe {
     private static final Logger LOGGER = LogManager.getLogger(Ashe.class);
 
     /**
+     * The model that will be used for error correction throughout the ASHE process.
+     * The initial state of {@code Ashe.MODEL} is the default model, {@link GptModel#GPT_4}.
+     */
+    public static String MODEL = ModelValidator.getDefaultModel();
+
+    /**
      * Orchestrates the running of ASHE's functionality by first minimizing
      * the target file with the Specimin tool, then correcting its errors using GPT,
      * and finally replacing the original method in the target file.
@@ -91,43 +100,51 @@ public class Ashe {
 
         JavaCodeCorrector corrector = new JavaCodeCorrector();
 
-        String speciminTempDir = corrector.minimizeTargetFile(root, targetFile, targetMethod);
-        final String sourceFilePath = String.valueOf(Paths.get(speciminTempDir, targetFile));
+        Path speciminTempDir = corrector.minimizeTargetFile(root, targetFile, targetMethod);
 
-        // The purpose of the dryrun mode is to test the Specimin minimization functionality.
-        // Therefore, skipping the error correction process is acceptable.
-        if (model.equals("dryrun")) {
-            LOGGER.info("Dryrun mode enabled. Skipping error correction.");
-            LOGGER.info("Exiting...");
-            return;
-        }
+        try {
+            final String sourceFilePath = speciminTempDir.resolve(targetFile).toString();
 
-        boolean errorsReplacedInTargetFile = corrector.fixTargetFileErrorsWithModel(sourceFilePath, targetMethod, model);
-
-        if (!errorsReplacedInTargetFile) {
-            if (corrector.checkedFileError(sourceFilePath).isEmpty()) {
-                LOGGER.info("No errors found in the file, no replacements needed.");
-                LOGGER.info("Exiting...");
+            if (model.equals("dryrun")) {
+                LOGGER.info("Dryrun mode enabled. Skipping error correction.");
                 return;
             }
 
-            String errorMessage = "Errors were found but not replaced with " + model + " response.";
-            LOGGER.error(errorMessage);
-            throw new RuntimeException(errorMessage);
-        }
-        LOGGER.info("Errors replaced with {} response successfully.", model);
+            LOGGER.info("Errors replaced with {} response successfully.", model);
+            boolean errorsReplacedInTargetFile = corrector.fixTargetFileErrorsWithModel(sourceFilePath, targetMethod, model);
 
-        String methodName = JavaCodeParser.extractMethodName(targetMethod);
-        final String originalFilePath = String.valueOf(Paths.get(root, targetFile));
-        boolean isOriginalMethodReplaced = MethodReplacementService.replaceOriginalTargetMethod(sourceFilePath, originalFilePath, methodName);
+            if (!errorsReplacedInTargetFile) {
+                if (corrector.checkedFileError(sourceFilePath).isEmpty()) {
+                    LOGGER.info("No errors found in the file, no replacements needed.");
+                    LOGGER.info("Exiting...");
+                    return;
+                }
 
-        if (!isOriginalMethodReplaced) {
-            String errorMessage = "Original method was not replaced.";
-            LOGGER.error(errorMessage);
-            throw new RuntimeException(errorMessage);
+                String errorMessage = "Errors were found but not replaced with " + model + " response.";
+                LOGGER.error(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+            LOGGER.info("Errors replaced with {} response successfully.", model);
+
+
+            String methodName = JavaCodeParser.extractMethodName(targetMethod);
+            final String originalFilePath = Paths.get(root, targetFile).toString();
+            boolean isOriginalMethodReplaced = MethodReplacementService.replaceOriginalTargetMethod(sourceFilePath, originalFilePath, methodName);
+
+            if (!isOriginalMethodReplaced) {
+                String errorMessage = "Original method was not replaced.";
+                LOGGER.error(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+        } finally {
+            LOGGER.info("Cleaning up temporary directory: " + speciminTempDir);
+            boolean deletedTempDir = FilesPlume.deleteDir(speciminTempDir.toFile());
+            if (!deletedTempDir) {
+                LOGGER.error("Failed to delete temporary directory: " + speciminTempDir);
+            }
+
+            LOGGER.info("Exiting...");
         }
-        LOGGER.info("Original method replaced successfully.");
-        LOGGER.info("Exiting...");
     }
 
     /**
@@ -176,12 +193,12 @@ public class Ashe {
 
         // If no model is provided, use the default model.
         if (args.length == 3) {
-            run(root, targetFile, targetMethod, ModelValidator.getDefaultModel());
+            run(root, targetFile, targetMethod, Ashe.MODEL);
             return;
         }
 
-        String model = args[3];
-        ModelValidator.validateModel(model);
-        run(root, targetFile, targetMethod, model);
+        Ashe.MODEL = args[3];
+        ModelValidator.validateModel(Ashe.MODEL);
+        run(root, targetFile, targetMethod, Ashe.MODEL);
     }
 }
