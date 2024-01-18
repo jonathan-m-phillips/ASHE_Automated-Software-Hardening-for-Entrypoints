@@ -1,0 +1,22 @@
+Sure, the error message is indicating that the `Socket` object is not being closed properly. This can lead to resource leaks. Here is the corrected code:
+
+```java
+public class SocketClient {
+
+    public void testSocket(int index) {
+        String serverIp = "127.0.0.1";
+        int serverPort = 8888;
+        // Use try-with-resources to ensure the Socket is closed properly
+        try (Socket socket = new Socket(serverIp, serverPort)) {
+            OutputStream outputStream = socket.getOutputStream();
+            String message = "Hello world";
+            outputStream.write(message.getBytes());
+            outputStream.flush();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+}
+```
+
+In the above code, I have used a try-with-resources statement. This statement ensures that each resource declared in the try is closed at the end of the statement. This is a feature introduced in Java 7 for automatic resource management. It simplifies the code and ensures that resources are always closed promptly and correctly, even in the face of exceptions.

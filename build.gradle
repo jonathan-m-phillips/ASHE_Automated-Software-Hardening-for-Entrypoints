@@ -1,3 +1,4 @@
+// TODO: Clean up this file, making it more readable and organized
 plugins {
     id 'java'
     id "org.checkerframework" version "0.6.33"
@@ -38,6 +39,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+
+    // "user.dir" is set to the root directory of the project.
+    // This property can be accessed in the test code to dynamically determine the project's root directory.
+    systemProperty "user.dir", project.rootDir
 }
 
 apply plugin: 'org.checkerframework'
@@ -47,6 +52,7 @@ checkerFramework {
             'org.checkerframework.checker.optional.OptionalChecker',
             'org.checkerframework.checker.resourceleak.ResourceLeakChecker',
     ]
+    excludeTests = true
 }
 
 
