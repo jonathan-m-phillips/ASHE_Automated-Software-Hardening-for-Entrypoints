@@ -15,8 +15,18 @@ import java.util.List;
 public class ModelValidator {
     private static final Logger LOGGER = LogManager.getLogger(ModelValidator.class);
 
-    // TODO: Since this class is a utility class, it should not be instantiated.
-    // TODO: Add a private constructor to prevent instantiation.
+    /**
+     * Private constructor to prevent instantiation.
+     * <p>
+     * This class is a utility class and is not meant to be instantiated.
+     * All methods are static and can be accessed without creating an instance.
+     * Making the constructor private ensures that this class cannot be instantiated
+     * from outside the class and helps to prevent misuse.
+     * </p>
+     */
+    private ModelValidator() {
+        throw new AssertionError("Cannot instantiate ModelValidator");
+    }
 
     /**
      * A list of valid large language model names supported by the application.
@@ -48,9 +58,8 @@ public class ModelValidator {
             throw new IllegalStateException(errorMessage);
         }
 
-        // TODO: getFirst() not get(0)
-        LOGGER.info("Returning default model: " + VALID_MODELS.get(0));
-        return VALID_MODELS.get(0);
+        LOGGER.info("Returning default model: " + VALID_MODELS.getFirst());
+        return VALID_MODELS.getFirst();
     }
 
     /**
