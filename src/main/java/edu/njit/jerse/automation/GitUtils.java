@@ -38,7 +38,12 @@ public class GitUtils {
             cloneCommand.setBranch(branch);
         }
 
-        cloneCommand.call();
+        try {
+            cloneCommand.call();
+        } catch (GitAPIException e) {
+            LOGGER.error("Error occurred while cloning repository: " + repoUrl, e);
+            throw e;
+        }
         LOGGER.info("Clone completed successfully {}", repoUrl);
     }
 
