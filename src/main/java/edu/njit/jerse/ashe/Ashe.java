@@ -98,8 +98,7 @@ public class Ashe {
             throws IOException, ExecutionException, InterruptedException, TimeoutException {
         LOGGER.info("Running ASHE with the {} model...", model);
 
-        JavaCodeCorrector corrector = new JavaCodeCorrector();
-
+        JavaCodeCorrector corrector = new JavaCodeCorrector(model);
         Path speciminTempDir;
 
         try {
@@ -131,9 +130,9 @@ public class Ashe {
                     return;
                 }
 
-                String errorMessage = "Errors were found but not replaced with " + model + " response.";
-                LOGGER.error(errorMessage);
-                throw new RuntimeException(errorMessage);
+                LOGGER.error("Errors were found but not replaced with " + model + " response.");
+                LOGGER.info("Skipping...");
+                return;
             }
             LOGGER.info("Errors replaced with {} response successfully.", model);
 

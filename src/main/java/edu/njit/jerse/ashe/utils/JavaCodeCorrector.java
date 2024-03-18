@@ -44,7 +44,24 @@ public class JavaCodeCorrector {
     private final String PROMPT_END = config.getPropertyValue("llm.prompt.end");
     private static final Pattern TARGET_FILE_PATTERN = Pattern.compile("([a-zA-Z_0-9]+/)*[a-zA-Z_0-9]+\\.java");
     private static final Pattern TARGET_METHOD_PATTERN = Pattern.compile("[a-zA-Z_0-9]+(\\.[a-zA-Z_0-9]+)*#[a-zA-Z_0-9]+\\([^\\)]*\\)");
+    private final ApiClient apiClient;
 
+    /**
+     * Constructs a new JavaCodeCorrector with the specified model, setting the apiClient field accordingly.
+     *
+     * @param model the model of which will determine the {@link ApiClient} to be used
+     */
+    public JavaCodeCorrector(String model) {
+        this.apiClient = switch (model) {
+            case ModelValidator.GPT_4 -> new GptApiClient();
+            // TODO: Add these LLM APIs to ASHE and uncomment them here.
+            // case "llama" -> new LlamaApiClient();
+            // case "palm" -> new PalmApiClient();
+            // case "grok" -> new GrokApiClient();
+            case ModelValidator.MOCK -> new MockResponseClient();
+            default -> throw new IllegalStateException("Unexpected value: " + model);
+        };
+    }
 
     /**
      * Utilizes GPT API to attempt to fix errors in the target Java file.
@@ -59,16 +76,6 @@ public class JavaCodeCorrector {
             throws IOException, IllegalArgumentException,
             InterruptedException, ExecutionException, TimeoutException {
 
-        ApiClient apiClient = switch (model) {
-            case ModelValidator.GPT_4 -> new GptApiClient();
-            // TODO: Add these LLM APIs to ASHE and uncomment them here.
-            // case "llama" -> new LlamaApiClient();
-            // case "palm" -> new PalmApiClient();
-            // case "grok" -> new GrokApiClient();
-            case ModelValidator.MOCK -> new MockResponseClient();
-            default -> throw new IllegalStateException("Unexpected value: " + model);
-        };
-
         String errorOutput = checkedFileError(targetFile);
         if (errorOutput.isEmpty()) {
             LOGGER.info("No errors found in the file.");
@@ -81,7 +88,7 @@ public class JavaCodeCorrector {
             String methodName = JavaCodeParser.extractMethodName(targetMethod);
             ClassOrInterfaceDeclaration checkedClass = JavaCodeParser.extractClassByMethodName(targetFile, methodName);
 
-            String modelCorrection = fetchCorrectionFromModel(apiClient, checkedClass, errorOutput, model);
+            String modelCorrection = fetchCorrectionFromModel(checkedClass, errorOutput, model);
             if (modelCorrection.isEmpty()) {
                 return false;
             }
@@ -108,7 +115,6 @@ public class JavaCodeCorrector {
     /**
      * Fetches a code correction suggestion from the LLM API for a given error in a file compiled with Checker Framework.
      *
-     * @param apiClient    the client for fetching responses from the provided LLM API
      * @param checkedClass The class or interface declaration containing the method with errors.
      * @param errorOutput  The error description from the Checker Framework that needs a correction.
      * @return the corrected code block as suggested by the LLM API, or an empty {@code String} if not found.
@@ -117,8 +123,7 @@ public class JavaCodeCorrector {
      * @throws InterruptedException If the current thread was interrupted while waiting.
      * @throws TimeoutException     If the wait timed out.
      */
-    private String fetchCorrectionFromModel(ApiClient apiClient,
-                                            ClassOrInterfaceDeclaration checkedClass, String errorOutput, String model)
+    private String fetchCorrectionFromModel(ClassOrInterfaceDeclaration checkedClass, String errorOutput, String model)
             throws IOException, ExecutionException, InterruptedException, TimeoutException {
 
         String prompt = checkedClass +

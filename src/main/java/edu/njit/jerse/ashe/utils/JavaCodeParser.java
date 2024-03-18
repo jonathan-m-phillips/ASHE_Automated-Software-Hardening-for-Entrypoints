@@ -332,7 +332,12 @@ public final class JavaCodeParser {
             String matchedGroup = matcher.group(1);
             if (matchedGroup != null) {
                 LOGGER.debug("Extracted Java code block from response: {}", matchedGroup);
-                return matchedGroup.trim();
+
+                // Strip comments from the extracted Java code block
+                String stripCommentsPattern = "(?s)//.*?(\r?\n)|/\\*.*?\\*/";
+                String strippedCodeBlock = matchedGroup.trim().replaceAll(stripCommentsPattern, "$1");
+                LOGGER.info("Stripped comments from Java code block: {}", strippedCodeBlock);
+                return strippedCodeBlock;
             }
         }
 
