@@ -11,6 +11,8 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A utility class to manage and run Specimin - a specification minimizer tool.
@@ -161,31 +163,60 @@ public final class SpeciminTool {
     }
 
     /**
-     * Attempts to compile the minimized file using the javac command.
+     * Attempts to compile all Java files in the directory specified by the path.
      *
-     * @param javaFilePath the path to the minimized file
-     * @return true if the file was compiled successfully, false otherwise
+     * @param directoryPath the path to the directory containing minimized Java file(s) as a {@code String}
+     * @return true if all files were compiled successfully, false otherwise
      * @throws IOException if there's an error executing the command or reading the output
      * @throws InterruptedException if the process execution is interrupted
      */
-    public static boolean compileMinimizedFile(String javaFilePath) throws IOException, InterruptedException {
-        LOGGER.info("Compiling minimized file: {}", javaFilePath);
+    public static boolean compileMinimizedFiles(String directoryPath) throws IOException, InterruptedException {
+        LOGGER.info("Compiling minimized files in directory: {}", directoryPath);
 
-        ProcessBuilder builder = new ProcessBuilder("javac", javaFilePath);
+        Path dir = Paths.get(directoryPath);
+        if (!Files.exists(dir)) {
+            LOGGER.error("Directory does not exist: {}", directoryPath);
+            return false;
+        }
+        if (!Files.isDirectory(dir)) {
+            LOGGER.error("Provided path is not a directory: {}", directoryPath);
+            return false;
+        }
+
+        List<File> javaFiles = findAllJavaFilesInMinimizedDir(dir);
+        if (javaFiles.isEmpty()) {
+            LOGGER.error("No Java files found in the directory.");
+            return false;
+        }
+
+        List<String> command = new ArrayList<>();
+        command.add("javac");
+
+        StringBuilder commandLog = new StringBuilder();
+        commandLog.append("Compiling Java files:").append(System.lineSeparator());
+        commandLog.append("javac");
+
+        for (File javaFile : javaFiles) {
+            command.add(javaFile.getPath());
+            commandLog.append(" ").append(javaFile.getPath());
+        }
+
+        LOGGER.info(commandLog.toString());
+
+        ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(true);
-
         Process process = builder.start();
         logProcessOutput(process);
 
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            LOGGER.error("Minimized file failed to compile. Exit code: {}", exitCode);
+            LOGGER.error("Minimized files failed to compile. Exit code: {}", exitCode);
             return false;
         }
 
         finalizeProcess(process);
 
-        LOGGER.info("Minimized file compiled successfully.");
+        LOGGER.info("Minimized files compiled successfully.");
         return true;
     }
 
@@ -242,5 +273,23 @@ public final class SpeciminTool {
             process.getOutputStream().close();
             process.destroy();
         }
+    }
+
+    /**
+     * Finds all Java files in the minimized directory and returns them as a list.
+     *
+     * @param minimizedDir the path to the minimized directory
+     * @return the list of Java files in the directory
+     * @throws IOException if there's an error reading the directory
+     */
+    private static List<File> findAllJavaFilesInMinimizedDir(Path minimizedDir) throws IOException {
+        List<File> javaFiles;
+        try (Stream<Path> paths = Files.walk(minimizedDir)) {
+            javaFiles = paths.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .map(Path::toFile)
+                    .collect(Collectors.toList());
+        }
+        return javaFiles;
     }
 }
