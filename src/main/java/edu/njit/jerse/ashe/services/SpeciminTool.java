@@ -161,6 +161,35 @@ public final class SpeciminTool {
     }
 
     /**
+     * Attempts to compile the minimized file using the javac command.
+     *
+     * @param javaFilePath the path to the minimized file
+     * @return true if the file was compiled successfully, false otherwise
+     * @throws IOException if there's an error executing the command or reading the output
+     * @throws InterruptedException if the process execution is interrupted
+     */
+    public static boolean compileMinimizedFile(String javaFilePath) throws IOException, InterruptedException {
+        LOGGER.info("Compiling minimized file: {}", javaFilePath);
+
+        ProcessBuilder builder = new ProcessBuilder("javac", javaFilePath);
+        builder.redirectErrorStream(true);
+
+        Process process = builder.start();
+        logProcessOutput(process);
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            LOGGER.error("Minimized file failed to compile. Exit code: {}", exitCode);
+            return false;
+        }
+
+        finalizeProcess(process);
+
+        LOGGER.info("Minimized file compiled successfully.");
+        return true;
+    }
+
+    /**
      * Logs the output from the Specimin process. If there is an and the model is not dryrun, the logger will skip
      * the output and provide a failure message. Else, the entirety of the output will be logged.
      *

@@ -2,6 +2,7 @@ package edu.njit.jerse.ashe;
 
 import edu.njit.jerse.ashe.llm.openai.models.GptModel;
 import edu.njit.jerse.ashe.services.MethodReplacementService;
+import edu.njit.jerse.ashe.services.SpeciminTool;
 import edu.njit.jerse.ashe.utils.JavaCodeCorrector;
 import edu.njit.jerse.ashe.utils.JavaCodeParser;
 import edu.njit.jerse.ashe.utils.ModelValidator;
@@ -103,8 +104,8 @@ public class Ashe {
 
         try {
             speciminTempDir = corrector.minimizeTargetFile(root, targetFile, targetMethod);
-        } catch (InterruptedException e) {
-            LOGGER.error("Failed to minimize the target file.");
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Failed to minimize the target file. " + e);
             LOGGER.info("Skipping...");
             return;
         }
@@ -113,6 +114,11 @@ public class Ashe {
             String sourceFilePath = "";
             if (speciminTempDir != null) {
                 sourceFilePath = speciminTempDir.resolve(targetFile).toString();
+                boolean didCompile = SpeciminTool.compileMinimizedFile(sourceFilePath);
+                if (!didCompile) {
+                    LOGGER.info("Skipping...");
+                    return;
+                }
             }
 
             if (model.equals(ModelValidator.DRY_RUN)) {
