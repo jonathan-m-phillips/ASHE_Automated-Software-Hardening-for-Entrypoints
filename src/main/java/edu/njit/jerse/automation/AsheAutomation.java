@@ -1,5 +1,6 @@
 package edu.njit.jerse.automation;
 
+import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.BodyDeclaration;
@@ -89,7 +90,14 @@ public class AsheAutomation {
             throw new IllegalArgumentException(errorMessage);
         }
 
-        CompilationUnit cu = StaticJavaParser.parse(javaFilePath);
+        CompilationUnit cu;
+        try {
+            cu = StaticJavaParser.parse(javaFilePath);
+        } catch (IOException | ParseProblemException e) {
+            LOGGER.error("Error parsing Java file: " + javaFileAbsolutePath, e);
+            LOGGER.info("Skipping...");
+            return;
+        }
 
         // targetFile - the Java file ASHE will target for minimization and error correction
         // Example: edu/njit/jerse/automation/AsheAutomation.java

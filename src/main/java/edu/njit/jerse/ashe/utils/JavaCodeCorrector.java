@@ -63,6 +63,10 @@ public class JavaCodeCorrector {
         };
     }
 
+    public JavaCodeCorrector() {
+        this.apiClient = new MockResponseClient();
+    }
+
     /**
      * Utilizes GPT API to attempt to fix errors in the target Java file.
      *

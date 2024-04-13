@@ -99,7 +99,13 @@ public class Ashe {
             throws IOException, ExecutionException, InterruptedException, TimeoutException {
         LOGGER.info("Running ASHE with the {} model...", model);
 
-        JavaCodeCorrector corrector = new JavaCodeCorrector(model);
+        JavaCodeCorrector corrector;
+
+        if (model.equals(ModelValidator.DRY_RUN)) {
+            corrector = new JavaCodeCorrector();
+        } else {
+            corrector = new JavaCodeCorrector(model);
+        }
         Path speciminTempDir;
 
         try {
