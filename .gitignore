@@ -43,6 +43,7 @@ bin/
 
 ### Logs ###
 logs/*
+*app.log
 ### Keep an empty directory placeholder ###
 !logs/.gitkeep
 
