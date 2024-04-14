@@ -3,6 +3,7 @@ package edu.njit.jerse.automation;
 import edu.njit.jerse.ashe.Ashe;
 import edu.njit.jerse.ashe.llm.openai.models.GptModel;
 import edu.njit.jerse.ashe.utils.ModelValidator;
+import edu.njit.jerse.config.Configuration;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -233,14 +234,17 @@ public class RepositoryAutomationEngine {
      *                         <li>if this argument is omitted, a default model will be used ({@link GptModel#GPT_4})</li>
      *                     </ul>
      *                 </li>
+     *                 <li>optional external props file</li>
      *             </ol>
      */
     public static void main(String[] args) {
-        if (args.length < 2 || args.length > 3) {
+        if (args.length < 2 || args.length > 4) {
             String errorMessage = String.format(
-                    "Invalid number of arguments: expected 2 or 3 arguments, but received %d. " +
+                    "Invalid number of arguments: expected 2, 3, or 4 arguments, but received %d. " +
                             "Required: 1) CSV file absolute path, 2) Directory for cloned repositories. " +
-                            "Optional: 3) Model name (LLM). Provided arguments: %s.",
+                            "Optional: 3) Model name (LLM)." +
+                            "Optional: 4) External properties file path, config.properties. " +
+                            "Provided arguments: %s.",
                     args.length, Arrays.toString(args));
 
             LOGGER.error(errorMessage);
@@ -258,6 +262,12 @@ public class RepositoryAutomationEngine {
 
         Ashe.MODEL = args[2];
         ModelValidator.validateModel(Ashe.MODEL);
+
+        if (args.length == 4) {
+            String externalConfigPath = args[3];
+            Configuration.getInstance(externalConfigPath);
+        }
+
         readAndProcessRepositoriesCsv(csvFilePath, repoDir, Ashe.MODEL);
     }
 }

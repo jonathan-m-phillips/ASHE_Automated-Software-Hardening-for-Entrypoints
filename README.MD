@@ -175,7 +175,7 @@ cloning and Java file processing.
 1. **Execute AsheAutomation:**
     - Run AsheAutomation using the following Gradle command:
       ```bash
-      ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pllm="llm-model"
+      ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pllm="llm-model" -PpropsFilePath="/path/to/props/file"
       ```
 
 **Command Arguments:**
@@ -192,6 +192,11 @@ cloning and Java file processing.
   test mode that responds with a mock patch and dryrun is a test mode that skips the error correction process.
     - Example: `gpt-4`, `mock`, or `dryrun`
     - Note: if no LLM is specified, the default is `gpt-4`
+
+**Optional Argument:**
+- **--propsFilePath:** specifies the path to the `config.properties` file
+    - Format: absolute path to the props file
+    - Example: `/path/to/props/file`
 
 ### Running RepositoryAutomationEngine
 
@@ -230,7 +235,7 @@ file containing the details of each repository. Follow these steps to create and
 6. **Execute RepositoryAutomationEngine:**
     - Run RepositoryAutomationEngine using the following Gradle command:
       ```bash
-      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pllm="llm-model"
+      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pllm="llm-model" -PpropsFilePath="/path/to/props/file"
       ```
 
 **Command Arguments:**
@@ -247,6 +252,11 @@ file containing the details of each repository. Follow these steps to create and
 test mode that responds with a mock patch and dryrun is a test mode that skips the error correction process.
     - Example: `gpt-4`, `mock`, or `dryrun`
     - Note: if no LLM is specified, the default is `gpt-4`
+
+**Optional Argument:**
+- **--propsFilePath:** specifies the path to the `config.properties` file
+    - Format: absolute path to the props file
+    - Example: `/path/to/props/file`
 
 <br/>
 

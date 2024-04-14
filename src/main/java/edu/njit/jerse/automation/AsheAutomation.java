@@ -10,6 +10,7 @@ import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import edu.njit.jerse.ashe.Ashe;
 import edu.njit.jerse.ashe.llm.openai.models.GptModel;
 import edu.njit.jerse.ashe.utils.ModelValidator;
+import edu.njit.jerse.config.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -211,16 +212,19 @@ public class AsheAutomation {
      *                         <li>if this argument is omitted, a default model will be used ({@link GptModel#GPT_4})</li>
      *                     </ul>
      *                 </li>
+     *                 <li>optional external props file</li>
      *             </ol>
      * @throws IOException if an I/O error occurs while accessing the directory
      */
     public static void main(String[] args)
             throws IOException {
-        if (args.length < 2 || args.length > 3) {
+        if (args.length < 2 || args.length > 4) {
             String errorMessage = String.format(
                     "Invalid number of arguments: expected 2 or 3, but received %d. " +
                             "Required: 1) Directory Path, 2) Project Root Path. " +
-                            "Optional: 3) Model name (LLM). Provided arguments: %s",
+                            "Optional: 3) Model name (LLM). " +
+                            "Optional: 4) External properties file path, config.properties. " +
+                            " Provided arguments: %s",
                     args.length, Arrays.toString(args));
 
             LOGGER.error(errorMessage);
@@ -244,6 +248,12 @@ public class AsheAutomation {
 
         Ashe.MODEL = args[2];
         ModelValidator.validateModel(Ashe.MODEL);
+
+        if (args.length == 4) {
+            String configPath = args[3];
+            Configuration.getInstance(configPath);
+        }
+
         processAllJavaFiles(directory, projectRootPath, Ashe.MODEL);
     }
 }
