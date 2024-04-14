@@ -175,7 +175,7 @@ cloning and Java file processing.
 1. **Execute AsheAutomation:**
     - Run AsheAutomation using the following Gradle command:
       ```bash
-      ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pmodel="llm-model"
+      ./gradlew runAsheAutomation -PmodulePath="/path/to/module" -ProotProjectPath="/path/to/root/project" -Pllm="llm-model"
       ```
 
 **Command Arguments:**
@@ -230,7 +230,7 @@ file containing the details of each repository. Follow these steps to create and
 6. **Execute RepositoryAutomationEngine:**
     - Run RepositoryAutomationEngine using the following Gradle command:
       ```bash
-      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pmodel="llm-model"
+      ./gradlew runRepositoryAutomation -PrepositoriesCsvPath="/path/to/repositories.csv" -PcloneDirectory="/path/to/clone/directory" -Pllm="llm-model"
       ```
 
 **Command Arguments:**
