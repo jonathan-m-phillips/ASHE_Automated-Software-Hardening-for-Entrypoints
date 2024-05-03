@@ -63,8 +63,8 @@ public class ModelValidator {
             throw new IllegalStateException(errorMessage);
         }
 
-        LOGGER.info("Returning default model: " + VALID_MODELS.getFirst());
-        return VALID_MODELS.getFirst();
+        LOGGER.info("Returning default model: {}", VALID_MODELS.get(0));
+        return VALID_MODELS.get(0);
     }
 
     /**
