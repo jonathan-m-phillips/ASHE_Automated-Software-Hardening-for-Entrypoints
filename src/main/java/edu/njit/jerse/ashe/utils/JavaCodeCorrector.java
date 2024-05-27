@@ -45,6 +45,7 @@ public class JavaCodeCorrector {
     private static final Pattern TARGET_FILE_PATTERN = Pattern.compile("([a-zA-Z_0-9]+/)*[a-zA-Z_0-9]+\\.java");
     private static final Pattern TARGET_METHOD_PATTERN = Pattern.compile("[a-zA-Z_0-9]+(\\.[a-zA-Z_0-9]+)*#[a-zA-Z_0-9]+\\([^\\)]*\\)");
     private final ApiClient apiClient;
+    private int maxRetries = 3; // default maxRetries set to 3
 
     /**
      * Constructs a new JavaCodeCorrector with the specified model, setting the apiClient field accordingly.
@@ -61,6 +62,25 @@ public class JavaCodeCorrector {
             case ModelValidator.MOCK -> new MockResponseClient();
             default -> throw new IllegalStateException("Unexpected value: " + model);
         };
+    }
+
+    /**
+     * Constructs a new JavaCodeCorrector with the specified model, setting the apiClient field accordingly.
+     *
+     * @param model the model of which will determine the {@link ApiClient} to be used
+     * @param maxRetires the maximum number of retries to attempt to fix errors in the target Java file
+     */
+    public JavaCodeCorrector(String model, int maxRetires) {
+        this.apiClient = switch (model) {
+            case ModelValidator.GPT_4 -> new GptApiClient();
+            // TODO: Add these LLM APIs to ASHE and uncomment them here.
+            // case "llama" -> new LlamaApiClient();
+            // case "palm" -> new PalmApiClient();
+            // case "grok" -> new GrokApiClient();
+            case ModelValidator.MOCK -> new MockResponseClient();
+            default -> throw new IllegalStateException("Unexpected value: " + model);
+        };
+        this.maxRetries = maxRetires;
     }
 
     public JavaCodeCorrector() {
@@ -88,7 +108,7 @@ public class JavaCodeCorrector {
 
         LOGGER.warn("Errors found in the file:" + System.lineSeparator() + errorOutput);
 
-        while (!errorOutput.isEmpty()) {
+        while (maxRetries > 0 && !errorOutput.isEmpty()) {
             String methodName = JavaCodeParser.extractMethodName(targetMethod);
             ClassOrInterfaceDeclaration checkedClass = JavaCodeParser.extractClassByMethodName(targetFile, methodName);
 
@@ -108,6 +128,12 @@ public class JavaCodeCorrector {
             errorOutput = checkedFileError(targetFile);
 
             if (!errorOutput.isEmpty()) {
+                maxRetries--;
+                if (maxRetries == 0) {
+                    LOGGER.warn("Max retries reached. Could not fix errors.");
+                    return false;
+                }
+
                 LOGGER.warn("Additional error(s) found after recompiling:" + System.lineSeparator() + errorOutput);
             }
         }
